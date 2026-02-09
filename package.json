@@ -1,0 +1,30 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Vicky kumar",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^1.41.3",
+    "cookie-parser": "^1.4.7",
+    "crypto": "^1.0.1",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "google-auth-library": "^10.5.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.1.1",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
+    "nodemailer": "^7.0.12",
+    "nodemon": "^3.1.11",
+    "razorpay": "^2.9.6",
+    "redis": "^5.10.0",
+    "socket.io": "^4.8.3",
+    "validator": "^13.15.26"
+  }
+}
