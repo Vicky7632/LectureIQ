@@ -1,9 +1,12 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "author": "Vicky kumar",
   "license": "ISC",
