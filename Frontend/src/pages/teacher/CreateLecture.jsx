@@ -129,7 +129,7 @@ const CreateLecture = () => {
       setUploadProgress(100)
       await new Promise(resolve => setTimeout(resolve, 500))
       toast.success('Lecture created successfully!')
-      navigate(`/teacher/course/${courseId}`)
+      navigate(`/teacher/course/${courseId}/lectures`)
     } catch (error) {
       console.error('Failed to create lecture:', error)
       toast.error(error.response?.data?.message || 'Failed to create lecture')

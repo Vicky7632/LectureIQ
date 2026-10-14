@@ -5,10 +5,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'react-hot-toast'
-import { GoogleLogin } from '@react-oauth/google'
 import { Eye, EyeOff, AlertCircle, User, Mail, Lock } from 'lucide-react'
 
 import { register as registerUser, googleLogin } from '../../store/slices/authSlice'
+import GoogleIdentityButton from '../../components/auth/GoogleIdentityButton'
 
 // Zod validation schema
 const registerSchema = z.object({
@@ -246,7 +246,7 @@ const Register = () => {
           {/* Google Login */}
           <div className="divider text-base-content/50">OR</div>
           <div className="flex justify-center">
-            <GoogleLogin
+            <GoogleIdentityButton
               onSuccess={handleGoogleSuccess}
               onError={() => setApiError('Google signup failed')}
               theme="filled_blue"

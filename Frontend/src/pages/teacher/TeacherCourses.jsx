@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { 
   BookOpen, PlusCircle, Edit, Video, Users, 
@@ -15,6 +15,8 @@ const TeacherCourses = () => {
   const [liveSessions, setLiveSessions] = useState([])   // 👈 naya state
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [startingSessionId, setStartingSessionId] = useState(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchData()   // 👈 ab ek saath courses aur live sessions fetch honge
@@ -24,7 +26,6 @@ const TeacherCourses = () => {
     try {
       setLoading(true)
       const response = await teacherApi.getMyCourses()
-      console.log('📦 API Response:', response.data)
       const coursesList = response.data.courses || []
       setCourses(coursesList)
       
@@ -51,6 +52,23 @@ const TeacherCourses = () => {
       fetchData()   // 👈 refresh after submit
     } catch (error) {
       toast.error(error.response?.data?.message || 'Submission failed')
+    }
+  }
+
+  const handleStartSession = async (lectureId) => {
+    if (startingSessionId) return
+
+    setStartingSessionId(lectureId)
+    try {
+      const response = await liveApi.start(lectureId)
+      if (response.data?.lecture?.liveStatus !== 'live') {
+        throw new Error(response.data?.message || 'The session did not start')
+      }
+      navigate(`/live/${lectureId}`)
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Failed to start session')
+    } finally {
+      setStartingSessionId(null)
     }
   }
 
@@ -118,13 +136,15 @@ const TeacherCourses = () => {
                       Scheduled: {new Date(session.scheduledTime).toLocaleString()}
                     </p>
                   </div>
-                  <Link
-                    to={`/live/${session._id}`}
+                  <button
+                    type="button"
+                    onClick={() => handleStartSession(session._id)}
+                    disabled={Boolean(startingSessionId)}
                     className="btn btn-primary btn-sm w-full gap-2 sm:w-auto"
                   >
                     <PlayCircle size={16} />
-                    Start Live
-                  </Link>
+                    {startingSessionId === session._id ? 'Starting...' : 'Start Session'}
+                  </button>
                 </div>
               ))}
             </div>
@@ -238,8 +258,7 @@ const TeacherCourses = () => {
 
                   {/* Add Lecture */}
                   {(course.status === 'draft' || course.status === 'rejected') && (
-                    <Link to={`/teacher/course/${course._id}/create-lecture`} 
-                          onClick={() => console.log('Course ID:', course._id)} 
+                    <Link to={`/teacher/course/${course._id}/create-lecture`}
                           className="btn btn-sm btn-outline">
                       <Video size={16} className="mr-1" />
                       Add Lecture

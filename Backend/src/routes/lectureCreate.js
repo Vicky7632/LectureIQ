@@ -11,8 +11,8 @@ const liveRecordingUpload = require('../middleware/liveRecordingUpload');
 
 lectureRouter.post('/create',teacherMiddleware,lectureVideoUpload,createLecture);
 lectureRouter.post('/create-live', teacherMiddleware, createLiveLecture);
-lectureRouter.patch('/lecture/:lectureId/start',teacherMiddleware,startLiveLecture);
-lectureRouter.patch('/lecture/:lectureId/end',teacherMiddleware,liveRecordingUpload,endLiveLecture);
+lectureRouter.patch('/:lectureId/start',teacherMiddleware,startLiveLecture);
+lectureRouter.patch('/:lectureId/end',teacherMiddleware,liveRecordingUpload,endLiveLecture);
 // Get upcoming live lectures for a course student and teacher dono ke liya.
 lectureRouter.get('/upcoming/:courseId', authMiddleware, getUpcomingLiveLectures);
 lectureRouter.get('/:lectureId/join', authMiddleware, getLectureById);

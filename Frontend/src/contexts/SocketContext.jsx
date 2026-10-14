@@ -3,6 +3,9 @@ import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 import { SharedSocketContext } from './socketContextHooks';
 
+let sharedSocket = null;
+let disconnectTimer = null;
+
 export const SocketProvider = ({ children }) => {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const [connection, setConnection] = useState({ socket: null, error: '' });
@@ -10,29 +13,60 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthenticated) return undefined;
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
-    const sharedSocket = io(socketUrl, {
-      withCredentials: true,
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    if (disconnectTimer) {
+      clearTimeout(disconnectTimer);
+      disconnectTimer = null;
+    }
 
-    sharedSocket.on('connect', () => {
+    if (!sharedSocket) {
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+      sharedSocket = io(socketUrl, {
+        path: '/socket.io',
+        autoConnect: false,
+        withCredentials: true,
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
+    }
+
+    const socket = sharedSocket;
+    const handleConnect = () => {
       console.info('Socket connected');
-      setConnection({ socket: sharedSocket, error: '' });
-    });
-    sharedSocket.on('disconnect', (reason) => {
+      setConnection({ socket, error: '' });
+    };
+    const handleDisconnect = (reason) => {
       console.info('Socket disconnected:', reason);
-      setConnection({ socket: sharedSocket, error: 'Disconnected. Reconnecting…' });
-    });
-    sharedSocket.on('connect_error', (error) => {
+      setConnection({ socket, error: 'Disconnected. Reconnecting…' });
+    };
+    const handleConnectError = (error) => {
       console.error('Socket connection failed:', error.message);
-      setConnection({ socket: sharedSocket, error: error.message });
-    });
+      setConnection({ socket, error: error.message });
+    };
 
-    return () => sharedSocket.disconnect();
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
+    if (socket.connected) {
+      queueMicrotask(handleConnect);
+    } else {
+      socket.connect();
+    }
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
+
+      disconnectTimer = setTimeout(() => {
+        if (sharedSocket === socket) {
+          socket.disconnect();
+          sharedSocket = null;
+        }
+        disconnectTimer = null;
+      }, 0);
+    };
   }, [isAuthenticated]);
 
   const contextValue = isAuthenticated ? connection : { socket: null, error: '' };

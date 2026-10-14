@@ -107,6 +107,7 @@ const isRecord = (value) =>
 
 const initSocket = (server) => {
   const io = socketIO(server, {
+    path: "/socket.io",
     cors: {
       origin: [
         "http://localhost:5173",

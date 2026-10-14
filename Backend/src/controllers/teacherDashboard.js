@@ -63,7 +63,7 @@ const getTeacherDashboardStats = async (req, res) => {
 const getTeacherCourseLectures = async (req, res) => {
     try {
         const { courseId } = req.params;
-        const teacherId = req.teacher._id;
+        const teacherId = req.user._id;
 
         // Check course ownership
         const course = await Course.findOne({
@@ -80,7 +80,7 @@ const getTeacherCourseLectures = async (req, res) => {
 
         //  Fetch lectures
         const lectures = await Lecture.find({ course: courseId })
-            .select("title duration order isPublished createdAt")
+            .select("title description videoUrl duration order isPreview lectureType isPublished createdAt")
             .sort({ order: 1 });
 
         res.status(200).json({

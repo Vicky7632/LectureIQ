@@ -172,7 +172,7 @@ const startLiveLecture = async (req, res) => {
 const endLiveLecture = async (req, res) => {
   try {
     const { lectureId } = req.params;
-    const { thumbnail, recordingUrl, recordingPublicId } = req.body;
+    const { thumbnail } = req.body || {};
 
     const lecture = await Lecture.findById(lectureId);
 
@@ -222,6 +222,8 @@ const endLiveLecture = async (req, res) => {
     /* ===========================
        3️⃣ CONVERT LIVE → RECORDED
     ============================ */
+    const recordingUrl = req.liveRecording?.videoUrl || req.body?.recordingUrl;
+    const recordingPublicId = req.liveRecording?.cloudinaryPublicId || req.body?.recordingPublicId;
     if (recordingUrl) {
       lecture.lectureType = "recorded";
       lecture.videoUrl = recordingUrl;
@@ -287,4 +289,3 @@ const getLectureById = async (req, res) => {
 };
 
 module.exports = { createLecture,startLiveLecture, endLiveLecture,createLiveLecture,getUpcomingLiveLectures,getLectureById};
-

@@ -118,6 +118,10 @@ const getCourseLectures = async (req, res) => {
 
 const enrollInCourse = async (req, res) => {
     try {
+        if (!req.student || req.student.role !== "student") {
+            return res.status(403).json({ message: "Student access only" });
+        }
+
         const studentId = req.student._id;
         const { courseId } = req.params;
 
@@ -138,43 +142,62 @@ const enrollInCourse = async (req, res) => {
         });
 
         if (existing) {
-            return res.status(400).json({
-                message: "Already enrolled",
+            return res.status(200).json({
+                message: existing.status === "active"
+                    ? "Already enrolled"
+                    : "Enrollment already exists",
+                alreadyEnrolled: existing.status === "active",
                 enrollment: existing,
             });
         }
 
-        // FREE COURSE
-        if (!course.isPaid) {
-            const enrollment = await Enrollment.create({
-                student: studentId,
-                course: courseId,
-                status: "active",
-                paymentStatus: "free",
-            });
-
-            return res.status(201).json({
-                message: "Enrolled successfully (Free)",
-                enrollment,
+        if (course.isPaid) {
+            return res.status(409).json({
+                message: "Payment is required to enroll in this course",
             });
         }
 
-        // PAID COURSE (PAYMENT LATER)
         const enrollment = await Enrollment.create({
             student: studentId,
             course: courseId,
-            status: "pending",
-            paymentStatus: "pending",
+            status: "active",
+            paymentStatus: "free",
         });
 
-        return res.status(200).json({
-            message: "Enrollment pending, complete payment",
+        return res.status(201).json({
+            message: "Enrolled successfully (Free)",
+            alreadyEnrolled: false,
             enrollment,
         });
     } catch (err) {
+        if (err?.code === 11000) {
+            try {
+                const existing = await Enrollment.findOne({
+                    student: req.student._id,
+                    course: req.params.courseId,
+                });
+                if (existing) {
+                    return res.status(200).json({
+                        message: existing.status === "active"
+                            ? "Already enrolled"
+                            : "Enrollment already exists",
+                        alreadyEnrolled: existing.status === "active",
+                        enrollment: existing,
+                    });
+                }
+            } catch (lookupError) {
+                console.error("EnrollDuplicateLookupError:", lookupError);
+                return res.status(500).json({ message: "Enrollment failed" });
+            }
+        }
         console.error("EnrollError:", err);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
 
-module.exports = { getPublishedCourses, getCourseById, getCourseLectures };
+module.exports = {
+    getPublishedCourses,
+    getCourseById,
+    getCourseLectures,
+    enrollInCourse,
+};

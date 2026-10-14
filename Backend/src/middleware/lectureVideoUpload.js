@@ -2,15 +2,16 @@ const multer = require("multer");
 const cloudinary = require("../config/cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
+const getUploadParams = () => ({
+  folder: "lecture-videos",
+  resource_type: "video",
+  public_id: `lecture_${Date.now()}`,
+});
+
 /* ===========================STORAGE CONFIG=========================== */
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: async (req, file) => ({
-    folder: "lecture-videos",
-    resource_type: "video",
-    format: "mp4",
-    public_id: `lecture_${Date.now()}`,
-  }),
+  params: getUploadParams,
 });
 
 /* ===========================FILE FILTER=========================== */
@@ -66,4 +67,4 @@ const lectureVideoUpload = (req, res, next) => {
 };
 
 module.exports = lectureVideoUpload;
-
+module.exports.getUploadParams = getUploadParams;

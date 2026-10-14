@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
-import { ArrowLeft, Plus, Video, Edit, Trash2, Clock, Eye } from 'lucide-react'
+import { ArrowLeft, Plus, Video, Edit, Trash2, Clock, Play } from 'lucide-react'
 import { teacherApi } from '../../api/teacherApi'
 
 const CourseLectures = () => {
@@ -132,6 +132,13 @@ const CourseLectures = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <Link
+                      to={`/teacher/course/${courseId}/preview?lecture=${encodeURIComponent(lecture._id)}`}
+                      className="btn btn-sm btn-ghost"
+                      aria-label={`Preview ${lecture.title}`}
+                    >
+                      <Play size={16} />
+                    </Link>
                     <Link
                       to={`/teacher/lecture/${lecture._id}/edit`}
                       className="btn btn-sm btn-ghost"

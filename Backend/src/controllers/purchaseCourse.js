@@ -12,20 +12,26 @@ const razorpay = new Razorpay({
 
 const createOrder = async (req, res) => {
   try {
-    //console.log("REQ.USER:", req.student);
+    if (!req.student || req.student.role !== "student") {
+      return res.status(403).json({ message: "Student access only" });
+    }
+
     const studentId = req.student._id;
     const { courseId } = req.params;
     const existingEnrollment = await Enrollment.findOne({
-  student: studentId,
-  course: courseId,
-});
+      student: studentId,
+      course: courseId,
+    });
 
-if (existingEnrollment) {
-  return res.status(400).json({
-    message: "Already enrolled in this course",
-  });
-}
-
+    if (existingEnrollment) {
+      return res.status(200).json({
+        message: existingEnrollment.status === "active"
+          ? "Already enrolled in this course"
+          : "An enrollment or payment is already in progress",
+        alreadyEnrolled: existingEnrollment.status === "active",
+        enrollment: existingEnrollment,
+      });
+    }
 
     const course = await Course.findById(courseId);
     if (!course || course.status !== "published") {
@@ -79,6 +85,26 @@ if (existingEnrollment) {
       key: process.env.RAZORPAY_KEY_ID,
     });
   } catch (err) {
+    if (err?.code === 11000 && req.student?._id && req.params?.courseId) {
+      try {
+        const existingEnrollment = await Enrollment.findOne({
+          student: req.student._id,
+          course: req.params.courseId,
+        });
+        if (existingEnrollment) {
+          return res.status(200).json({
+            message: existingEnrollment.status === "active"
+              ? "Already enrolled in this course"
+              : "An enrollment or payment is already in progress",
+            alreadyEnrolled: existingEnrollment.status === "active",
+            enrollment: existingEnrollment,
+          });
+        }
+      } catch (lookupError) {
+        console.error("CreateOrderDuplicateLookupError:", lookupError);
+        return res.status(500).json({ message: "Payment order failed" });
+      }
+    }
     console.error("CreateOrderError:", err);
     return res.status(500).json({ message: "Payment order failed" });
   }

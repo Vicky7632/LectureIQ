@@ -5,10 +5,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'react-hot-toast'
-import { GoogleLogin } from '@react-oauth/google'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 
 import { login, googleLogin } from '../../store/slices/authSlice'
+import GoogleIdentityButton from '../../components/auth/GoogleIdentityButton'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -161,7 +161,7 @@ const Login = () => {
           {/* Google Login */}
           <div className="divider text-base-content/50">OR</div>
           <div className="flex justify-center">
-            <GoogleLogin
+            <GoogleIdentityButton
               onSuccess={handleGoogleSuccess}
               onError={() => setApiError('Google login failed')}
               theme="filled_blue"

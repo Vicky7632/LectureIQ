@@ -6,7 +6,9 @@ import {
   ChevronRight, Calendar, Globe, Award, Shield
 } from 'lucide-react'
 import { courseApi } from '../../api/courseApi'
+import { enrollmentApi } from '../../api/enrollmentApi'
 import { paymentApi } from '../../api/paymentapi'
+import { getLecturePlayerPath } from '../../routes/lecturePlayerRoutes'
 import { toast } from 'react-hot-toast'
 
 const CourseDetail = () => {
@@ -18,21 +20,67 @@ const CourseDetail = () => {
   const [lectures, setLectures] = useState([])
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
+  const [enrollmentPending, setEnrollmentPending] = useState(false)
+  const [enrollmentStatusLoading, setEnrollmentStatusLoading] = useState(false)
+  const [enrollmentStatusError, setEnrollmentStatusError] = useState('')
   const [processingPayment, setProcessingPayment] = useState(false)
+  const isCourseTeacher =
+    user?.role === 'teacher' &&
+    String(course?.teacher?._id) === String(user?._id)
+
+  const fetchEnrollmentStatus = useCallback(async () => {
+    setEnrollmentStatusLoading(true)
+    setEnrollmentStatusError('')
+    try {
+      const response = await enrollmentApi.getMyEnrollments()
+      const courseEnrollment = (response.data.enrollments || []).find(
+        (enrollment) =>
+          String(enrollment.course?._id || enrollment.course) === String(id)
+      )
+      setEnrolled(courseEnrollment?.status === 'active')
+      setEnrollmentPending(courseEnrollment?.status === 'pending')
+      return courseEnrollment?.status || null
+    } catch (error) {
+      setEnrolled(false)
+      setEnrollmentPending(false)
+      setEnrollmentStatusError(
+        error.response?.data?.message || 'Unable to check your enrollment status.'
+      )
+      return null
+    } finally {
+      setEnrollmentStatusLoading(false)
+    }
+  }, [id])
+
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'student') {
+      fetchEnrollmentStatus()
+      return
+    }
+
+    setEnrolled(false)
+    setEnrollmentPending(false)
+    setEnrollmentStatusError('')
+    setEnrollmentStatusLoading(false)
+  }, [fetchEnrollmentStatus, isAuthenticated, user?.role])
 
   const fetchCourseDetails = useCallback(async () => {
     try {
       setLoading(true)
+      const courseRequest = courseApi.getCourseById(id).catch((error) => {
+        const restrictedCourse = error.response?.data?.course
+        if (error.response?.status === 403 && restrictedCourse) {
+          return { data: { course: restrictedCourse } }
+        }
+        throw error
+      })
       const [courseRes, lecturesRes] = await Promise.all([
-        courseApi.getCourseById(id),
+        courseRequest,
         courseApi.getCourseLectures(id)
       ])
       
       setCourse(courseRes.data.course)
       setLectures(lecturesRes.data.lectures || [])
-      
-      // Check if user is enrolled (you would call an enrollment API)
-      setEnrolled(false) // Mock - implement actual check
     } catch (error) {
       console.error('Failed to fetch course details:', error)
       toast.error('Failed to load course details')
@@ -46,8 +94,15 @@ const CourseDetail = () => {
   }, [fetchCourseDetails])
 
   const handleEnroll = async () => {
+    if (processingPayment) return
+
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/course/${id}` } })
+      return
+    }
+
+    if (user?.role !== 'student') {
+      toast.error('Only students can enroll in courses.')
       return
     }
 
@@ -58,6 +113,21 @@ const CourseDetail = () => {
         // Create payment order
         const orderRes = await paymentApi.createOrder(id)
         const { orderId, amount, currency, key } = orderRes.data
+        if (!orderId) {
+          const existingEnrollment = orderRes.data.enrollment
+          if (!existingEnrollment) {
+            throw new Error('The payment order response was incomplete.')
+          }
+
+          setEnrolled(existingEnrollment.status === 'active')
+          setEnrollmentPending(existingEnrollment.status === 'pending')
+          if (existingEnrollment.status === 'active') {
+            toast.success('You are already enrolled in this course.')
+          } else {
+            toast('Your payment or enrollment is still being confirmed.')
+          }
+          return
+        }
         
         // Initialize Razorpay
         const options = {
@@ -74,9 +144,13 @@ const CourseDetail = () => {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature
               })
-              
-              toast.success('Payment successful! Course enrolled.')
-              setEnrolled(true)
+
+              const status = await fetchEnrollmentStatus()
+              if (status === 'active') {
+                toast.success('Payment successful! Course enrolled.')
+              } else if (status === 'pending') {
+                toast('Payment verified. Course access is awaiting confirmation.')
+              }
             } catch {
               toast.error('Payment verification failed')
             }
@@ -93,10 +167,19 @@ const CourseDetail = () => {
         const razorpay = new window.Razorpay(options)
         razorpay.open()
       } else {
-        // Free course enrollment
-        // Call your free enrollment API
-        toast.success('Successfully enrolled in free course!')
-        setEnrolled(true)
+        const response = await enrollmentApi.enrollInCourse(id)
+        const status = response.data.enrollment?.status
+        setEnrolled(status === 'active')
+        setEnrollmentPending(status === 'pending')
+        if (status === 'active') {
+          toast.success(
+            response.data.alreadyEnrolled
+              ? 'You are already enrolled in this course.'
+              : 'Successfully enrolled in free course!'
+          )
+        } else {
+          toast('Your enrollment is awaiting confirmation.')
+        }
       }
     } catch (error) {
       console.error('Enrollment failed:', error)
@@ -216,6 +299,34 @@ const CourseDetail = () => {
                         <PlayCircle size={20} className="mr-2" />
                         Continue Learning
                       </button>
+                    ) : isAuthenticated && user?.role !== 'student' ? (
+                      <button disabled className="btn btn-primary w-full">
+                        Student enrollment only
+                      </button>
+                    ) : enrollmentPending ? (
+                      <button disabled className="btn btn-primary w-full">
+                        {course.isPaid
+                          ? 'Payment confirmation pending'
+                          : 'Enrollment confirmation pending'}
+                      </button>
+                    ) : enrollmentStatusLoading ? (
+                      <button disabled className="btn btn-primary w-full">
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Checking enrollment...
+                      </button>
+                    ) : enrollmentStatusError ? (
+                      <div className="space-y-2">
+                        <p role="alert" className="text-sm text-error">
+                          {enrollmentStatusError}
+                        </p>
+                        <button
+                          onClick={fetchEnrollmentStatus}
+                          disabled={enrollmentStatusLoading}
+                          className="btn btn-outline w-full"
+                        >
+                          Retry enrollment check
+                        </button>
+                      </div>
                     ) : (
                       <button
                         onClick={handleEnroll}
@@ -276,9 +387,17 @@ const CourseDetail = () => {
                           </div>
                           <div className="collapse-content">
                             <p className="text-gray-600 mb-3">{lecture.description}</p>
-                            {enrolled || lecture.isPreview ? (
+                            {isCourseTeacher || (user?.role !== 'teacher' && (enrolled || lecture.isPreview)) ? (
                               <button
-                                onClick={() => navigate(`/student/course/${id}/learn?lecture=${lecture._id}`)}
+                                onClick={() =>
+                                  navigate(
+                                    getLecturePlayerPath(
+                                      id,
+                                      lecture._id,
+                                      isCourseTeacher ? 'teacher' : user?.role
+                                    )
+                                  )
+                                }
                                 className="btn btn-sm btn-primary"
                               >
                                 <PlayCircle size={16} className="mr-2" />

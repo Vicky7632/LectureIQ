@@ -20,6 +20,7 @@ const LiveSessionRoom = () => {
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [roomJoined, setRoomJoined] = useState(false);
+  const [endingSession, setEndingSession] = useState(false);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -217,14 +218,20 @@ const LiveSessionRoom = () => {
   }, [role, roomJoined, startTeacherStream]);
 
   const handleEndSession = async () => {
-    if (role !== "teacher") return;
+    if (role !== "teacher" || endingSession) return;
 
+    setEndingSession(true);
     try {
-      await liveApi.end(lectureId, null);
+      const response = await liveApi.end(lectureId, null);
+      if (response.data?.lecture?.liveStatus !== "ended") {
+        throw new Error(response.data?.message || "The session did not end");
+      }
       toast.success("Session ended");
       navigate("/teacher/dashboard");
-    } catch {
-      toast.error("Failed to end session");
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || "Failed to end session");
+    } finally {
+      setEndingSession(false);
     }
   };
 
@@ -246,9 +253,10 @@ const LiveSessionRoom = () => {
           {role === "teacher" && (
             <button
               onClick={handleEndSession}
+              disabled={endingSession}
               className="btn btn-error btn-sm mr-2"
             >
-              End Session
+              {endingSession ? "Ending..." : "End Session"}
             </button>
           )}
 

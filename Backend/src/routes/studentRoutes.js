@@ -8,7 +8,7 @@ const {updateLectureProgress} = require("../controllers/lectureProgressControlle
 const studentRouter = express.Router();
 
 studentRouter.get("/my-courses", studentMiddleware, getMyCoursesDashboard);
-studentRouter.post( "/lecture/:lectureId/progress", studentMiddleware,updateLectureProgress);
+studentRouter.post("/lecture/:lectureId/progress", studentMiddleware, updateLectureProgress);
 studentRouter.get('/enrollments', studentMiddleware, getMyEnrollments);
 
 module.exports = studentRouter;

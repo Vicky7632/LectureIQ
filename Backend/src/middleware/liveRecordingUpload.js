@@ -2,14 +2,17 @@ const multer = require("multer");
 const cloudinary = require("../config/cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
+const getUploadParams = (req) => ({
+  folder: "lectureiq/live_recordings",
+  resource_type: "video",
+  public_id: `live_${req.params.lectureId}_${Date.now()}`,
+  eager_async: true,
+});
+
 /* ================= STORAGE ================= */
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: async (req, file) => ({
-    folder: "lectureiq/live_recordings",
-    resource_type: "video",
-    public_id: `live_${req.params.lectureId}_${Date.now()}`,
-  }),
+  params: getUploadParams,
 });
 
 /* ================= FILE FILTER ================= */
@@ -43,20 +46,16 @@ const liveRecordingUpload = (req, res, next) => {
       });
     }
 
-    if (!req.file) {
-      return res.status(400).json({
-        message: "Live recording video is required",
-      });
+    if (req.file) {
+      req.liveRecording = {
+        videoUrl: req.file.path,
+        cloudinaryPublicId: req.file.filename,
+      };
     }
-
-    // Attach uploaded data for controller
-    req.liveRecording = {
-      videoUrl: req.file.path,
-      cloudinaryPublicId: req.file.filename,
-    };
 
     next();
   });
 };
 
 module.exports = liveRecordingUpload;
+module.exports.getUploadParams = getUploadParams;

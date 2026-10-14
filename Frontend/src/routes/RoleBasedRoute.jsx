@@ -23,17 +23,11 @@
 // export default RoleBasedRoute
 import { Navigate, Outlet } from 'react-router-dom'
 import { useSelector } from 'react-redux'
+import { hasAllowedRole } from './lecturePlayerRoutes'
 
 const RoleBasedRoute = ({ allowedRoles }) => {
   const { user, isAuthenticated, loading } = useSelector((state) => state.auth)
-  const role = user?.role   // 👈 user object se role nikaalo
-//  console.log('========== ROLE BASED ROUTE DEBUG ==========')
-//   console.log('isAuthenticated:', isAuthenticated)
-//   console.log('user object:', user)
-//   console.log('role from user:', role)
-//   console.log('allowedRoles:', allowedRoles)
-//   console.log('loading:', loading)
-//   console.log('============================================')
+  const role = user?.role
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -42,12 +36,7 @@ const RoleBasedRoute = ({ allowedRoles }) => {
     )
   }
 
-  if (!isAuthenticated || !role || !allowedRoles.includes(role)) {
-    console.log('❌ Redirecting to home because:', {
-      isAuthenticatedMissing: !isAuthenticated,
-      roleMissing: !role,
-      roleNotAllowed: role ? !allowedRoles.includes(role) : false
-    })
+  if (!isAuthenticated || !hasAllowedRole(role, allowedRoles)) {
     return <Navigate to="/" replace />
   }
 

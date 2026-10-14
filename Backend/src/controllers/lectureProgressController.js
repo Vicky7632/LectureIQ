@@ -1,16 +1,42 @@
 
+const mongoose = require("mongoose");
 const LectureProgress = require("../models/lectureProgress");
 const Enrollment = require("../models/enrollment");
+const Lecture = require("../models/lecture");
 
 const updateLectureProgress = async (req, res) => {
   try {
-    const studentId = req.user._id;
-    const { lectureId } = req.params;
-    const { watchedDuration, completed } = req.body;
+    const student = req.student;
+    if (!student) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    if (student.role !== "student") {
+      return res.status(403).json({ message: "Student access only" });
+    }
 
-    // enrollment check
+    const { lectureId } = req.params;
+    if (!mongoose.isValidObjectId(lectureId)) {
+      return res.status(400).json({ message: "Invalid lecture ID" });
+    }
+
+    const { watchedDuration, completed } = req.body || {};
+    if (
+      typeof watchedDuration !== "number" ||
+      !Number.isFinite(watchedDuration) ||
+      watchedDuration < 0 ||
+      typeof completed !== "boolean"
+    ) {
+      return res.status(400).json({ message: "Invalid lecture progress" });
+    }
+
+    const lecture = await Lecture.findById(lectureId).select("course");
+    if (!lecture) {
+      return res.status(404).json({ message: "Lecture not found" });
+    }
+
     const enrollment = await Enrollment.findOne({
-      student: studentId,
+      student: student._id,
+      course: lecture.course,
       status: "active",
     });
 
@@ -19,12 +45,12 @@ const updateLectureProgress = async (req, res) => {
     }
 
     const progress = await LectureProgress.findOneAndUpdate(
-      { student: studentId, lecture: lectureId },
+      { student: student._id, lecture: lectureId },
       {
         watchedDuration,
         completed,
         lastWatchedAt: new Date(),
-        course: enrollment.course,
+        course: lecture.course,
       },
       { upsert: true, new: true }
     );

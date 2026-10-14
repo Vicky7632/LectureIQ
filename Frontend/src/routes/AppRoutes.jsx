@@ -91,6 +91,7 @@ const AppRoutes = () => {
           <Route path="/teacher/course/:id/edit" element={<EditCourse />} />
           <Route path="/teacher/course/:id/students" element={<CourseStudents />} />
           <Route path="/teacher/course/:id/lectures" element={<CourseLectures />} />   {/* 👈 New */}
+          <Route path="/teacher/course/:id/preview" element={<CoursePlayer />} />
           <Route path="/teacher/course/:id/create-lecture" element={<CreateLecture />} />
           <Route path="/teacher/schedule-live" element={<ScheduleLive />} />
           

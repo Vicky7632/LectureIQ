@@ -56,11 +56,16 @@ const getMyCoursesDashboard = async (req, res) => {
 };
 const getMyEnrollments = async (req, res) => {
   try {
+    if (!req.student || req.student.role !== "student") {
+      return res.status(403).json({ message: "Student access only" });
+    }
+
     const enrollments = await Enrollment.find({ student: req.student._id })
       .populate('course', 'title thumbnail');
-    res.json({ enrollments });
+    return res.status(200).json({ enrollments });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("GetMyEnrollmentsError:", err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 module.exports = { getMyCoursesDashboard ,getMyEnrollments};

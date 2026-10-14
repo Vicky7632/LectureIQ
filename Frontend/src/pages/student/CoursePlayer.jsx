@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
-import { courseApi, lectureApi } from '../../api'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { courseApi, lectureApi, teacherApi } from '../../api'
 import VideoPlayer from '../../components/lectures/VideoPlayer'
 import LectureList from '../../components/courses/LectureList'
 import ProgressBar from '../../components/lectures/ProgressBar'
@@ -9,6 +10,9 @@ import Loader from '../../components/common/Loader'
 
 const CoursePlayer = () => {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const requestedLectureId = searchParams.get('lecture')
+  const role = useSelector((state) => state.auth.user?.role)
   const [lectures, setLectures] = useState([])
   const [current, setCurrent] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -18,24 +22,36 @@ const CoursePlayer = () => {
   const [summaryError, setSummaryError] = useState('')
   const [summarizing, setSummarizing] = useState(false)
   const summaryRequestId = useRef(0)
+  const progressLastSentAt = useRef(0)
+  const progressRequestInFlight = useRef(false)
+  const completionSent = useRef(false)
+  const progressFailedLectureId = useRef(null)
+  const [progressError, setProgressError] = useState('')
 
   const fetchCourseContent = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const res = await courseApi.getCourseLectures(id)
+      const res =
+        role === 'teacher'
+          ? await teacherApi.getCourseLectures(id)
+          : await courseApi.getCourseLectures(id)
       const lectureList = res.data.lectures || []
 
       setLectures(lectureList)
-      setCurrent(lectureList[0] || null)
+      setCurrent(
+        lectureList.find((lecture) => lecture._id === requestedLectureId) ||
+          lectureList[0] ||
+          null
+      )
     } catch (err) {
       console.error('Failed to load lectures:', err)
       setError('Failed to load course content. Please try again.')
     } finally {
       setLoading(false)
     }
-  }, [id])
+  }, [id, requestedLectureId, role])
 
   useEffect(() => {
     summaryRequestId.current += 1
@@ -48,17 +64,41 @@ const CoursePlayer = () => {
 
 
   const handleProgress = (state) => {
-    if (!current) return
+    if (
+      role !== 'student' ||
+      !/^[a-f\d]{24}$/i.test(current?._id || '') ||
+      !Number.isFinite(state.playedSeconds)
+    ) {
+      return
+    }
+
     const watchedSeconds = Math.floor(state.playedSeconds)
     const completed = state.played > 0.9
-    
+
     setProgress(Math.round(state.played * 100))
-    
-    // Throttle API calls (optional – implement debounce if needed)
+
+    if (
+      progressRequestInFlight.current ||
+      progressFailedLectureId.current === current._id ||
+      (completed && completionSent.current) ||
+      (!completed && Date.now() - progressLastSentAt.current < 10000)
+    ) {
+      return
+    }
+
+    progressLastSentAt.current = Date.now()
+    progressRequestInFlight.current = true
+    if (completed) completionSent.current = true
+
     lectureApi.updateProgress(current._id, {
       watchedDuration: watchedSeconds,
       completed
-    }).catch(err => console.error('Progress update failed:', err))
+    }).catch(() => {
+      progressFailedLectureId.current = current._id
+      setProgressError('Unable to save learning progress. Video playback is not affected.')
+    }).finally(() => {
+      progressRequestInFlight.current = false
+    })
   }
 
   const handleComplete = () => {
@@ -68,6 +108,10 @@ const CoursePlayer = () => {
 
   const selectLecture = (lecture) => {
     summaryRequestId.current += 1
+    progressLastSentAt.current = 0
+    completionSent.current = false
+    progressFailedLectureId.current = null
+    setProgressError('')
     setCurrent(lecture)
     setSummary('')
     setSummaryError('')
@@ -154,6 +198,11 @@ const CoursePlayer = () => {
                 )}
               </section>
               <ProgressBar progress={progress} />
+              {progressError && (
+                <p role="status" className="text-sm text-warning">
+                  {progressError}
+                </p>
+              )}
             </div>
           </>
         ) : (
