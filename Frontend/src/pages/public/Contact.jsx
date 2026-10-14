@@ -50,7 +50,7 @@ const Contact = () => {
                 <label className="label">Message</label>
                 <textarea className="textarea textarea-bordered w-full" rows="4" placeholder="Your message..."></textarea>
               </div>
-              <button className="btn btn-primary mt-4">Send Message</button>
+              <button className="btn btn-primary mt-4 px-6 py-3">Send Message</button>
             </form>
           </div>
         </div>
