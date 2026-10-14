@@ -44,8 +44,8 @@ const ForgotPassword = () => {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
-        <div className="card w-full max-w-md shadow-2xl bg-base-100 text-base-content">
+      <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">
+        <div className="card w-full max-w-md bg-base-100 text-base-content">
           <div className="card-body text-center">
             <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-10 h-10 text-success" />
@@ -65,9 +65,9 @@ const ForgotPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
-      <div className="card w-full max-w-md shadow-2xl bg-base-100 text-base-content">
-        <div className="card-body">
+    <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">
+      <div className="card w-full max-w-md bg-base-100 text-base-content">
+        <div className="card-body px-7 sm:px-8">
           {/* Back Button */}
           <div className="mb-2">
             <Link

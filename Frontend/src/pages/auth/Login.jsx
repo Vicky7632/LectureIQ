@@ -65,10 +65,9 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
-      {/* Card - Original DaisyUI bg-base-100 */}
-      <div className="card w-full max-w-md shadow-2xl bg-base-100 text-base-content">
-        <div className="card-body">
+    <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">
+      <div className="card w-full max-w-md bg-base-100 text-base-content">
+        <div className="card-body px-7 py-6 sm:px-8 sm:py-8">
           {/* Header */}
           <div className="text-center mb-5">
             <p className="text-sm uppercase tracking-wide text-base-content/70">
@@ -92,13 +91,14 @@ const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Email Field */}
             <div>
               <input
                 type="email"
                 placeholder="Email address"
-                className={`input input-bordered  p-2 w-full bg-gray-900 text-base-content border-300 placeholder:text-base-content/50 focus:border-primary ${
+                aria-label="Email address"
+                className={`input input-bordered w-full ${
                   errors.email ? 'border-error focus:border-error' : ''
                 }`}
                 {...register('email')}
@@ -116,13 +116,15 @@ const Login = () => {
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Enter password"
-                className={`input p-2 input-bordered w-full pr-10 bg-gray-900 text-base-content border-base-300 placeholder:text-base-content/50 focus:border-primary ${
+                aria-label="Password"
+                className={`input input-bordered w-full pr-10 ${
                   errors.password ? 'border-error focus:border-error' : ''
                 }`}
                 {...register('password')}
               />
               <button
                 type="button"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 className="absolute right-3 top-3 text-base-content/60 hover:text-base-content"
                 onClick={() => setShowPassword(!showPassword)}
               >

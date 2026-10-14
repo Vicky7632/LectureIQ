@@ -58,7 +58,7 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-linear-to-r from-primary to-red-600 text-primary-content p-6 rounded-2xl shadow-lg">
+      <div className="dashboard-banner rounded-2xl p-6">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <p className="opacity-90">Manage platform activities and monitor performance</p>
       </div>

@@ -49,18 +49,18 @@ const CreateTeacher = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="mx-auto w-full max-w-2xl">
       <button onClick={() => navigate(-1)} className="btn btn-ghost btn-sm mb-4">
         <ArrowLeft size={16} className="mr-2" />
         Back
       </button>
 
-      <div className="card bg-base-100 shadow-lg">
+      <div className="card w-full bg-base-100">
         <div className="card-body">
-          <h2 className="card-title text-2xl mb-4">Register New Teacher</h2>
+          <h2 className="card-title text-xl">Register New Teacher</h2>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="label">First Name</label>
                 <div className="relative">
@@ -137,11 +137,11 @@ const CreateTeacher = () => {
               )}
             </div>
 
-            <div className="flex justify-end gap-4 mt-6">
-              <button type="button" onClick={() => navigate('/admin/teachers')} className="btn btn-ghost">
+            <div className="mt-6 flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end sm:gap-4">
+              <button type="button" onClick={() => navigate('/admin/teachers')} className="btn btn-ghost w-full sm:w-auto">
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
+              <button type="submit" className="btn btn-primary w-full sm:w-auto" disabled={loading}>
                 {loading ? 'Registering...' : 'Register Teacher'}
               </button>
             </div>

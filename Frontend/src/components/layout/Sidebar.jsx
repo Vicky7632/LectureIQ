@@ -57,8 +57,10 @@ const Sidebar = ({ isOpen, setSidebarOpen }) => {   // 👈 prop aaya
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          className="fixed inset-0 z-40 bg-base-content/30 backdrop-blur-[2px] lg:hidden"
           onClick={closeSidebar}
         />
       )}
@@ -67,30 +69,36 @@ const Sidebar = ({ isOpen, setSidebarOpen }) => {   // 👈 prop aaya
       <aside
         className={`
           fixed lg:sticky top-0 left-0 z-50 lg:z-30
-          h-screen w-64 bg-base-200 shadow-lg
+          h-screen w-64 border-r border-base-300 bg-base-100
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
-        <div className="flex items-center justify-between p-4 lg:hidden">
-          <span className="text-xl font-bold">LectureIQ</span>
+        <div className="flex items-center justify-between border-b border-base-300 p-4 lg:hidden">
+          <span className="text-lg font-bold tracking-tight">Lecture<span className="text-primary">IQ</span></span>
           <button
             onClick={closeSidebar}
             className="btn btn-ghost btn-circle"
+            aria-label="Close navigation menu"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-4">
-          <ul className="menu bg-base-200 w-full gap-1">
+        <div className="px-3 py-5">
+          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-base-content/50">
+            Workspace
+          </p>
+          <ul className="menu w-full gap-1 p-0">
             {getLinks().map((link) => (
               <li key={link.to}>
                 <NavLink
                   to={link.to}
                   onClick={closeSidebar}
                   className={({ isActive }) =>
-                    isActive ? 'active' : ''
+                    isActive
+                      ? 'active border border-primary/10 bg-primary/10 font-semibold text-primary'
+                      : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
                   }
                   end={link.to === '/student/dashboard' || link.to === '/teacher/dashboard' || link.to === '/admin/dashboard'}
                 >

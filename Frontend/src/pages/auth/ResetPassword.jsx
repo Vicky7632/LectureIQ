@@ -75,8 +75,8 @@ const ResetPassword = () => {
 
   if (!isValidToken) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
-        <div className="card w-full max-w-md shadow-2xl bg-base-100 text-base-content">
+      <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">
+        <div className="card w-full max-w-md bg-base-100 text-base-content">
           <div className="card-body text-center">
             <div className="w-20 h-20 bg-error/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertCircle className="w-10 h-10 text-error" />
@@ -96,8 +96,8 @@ const ResetPassword = () => {
 
   if (resetSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
-        <div className="card w-full max-w-md shadow-2xl bg-base-100 text-base-content">
+      <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">
+        <div className="card w-full max-w-md bg-base-100 text-base-content">
           <div className="card-body text-center">
             <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-10 h-10 text-success" />
@@ -116,9 +116,9 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
-      <div className="card w-full max-w-md shadow-2xl bg-base-100 text-base-content">
-        <div className="card-body">
+    <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">
+      <div className="card w-full max-w-md bg-base-100 text-base-content">
+        <div className="card-body px-7 sm:px-8">
           {/* Back Button */}
           <div className="mb-2">
             <Link
@@ -160,6 +160,7 @@ const ResetPassword = () => {
               <Lock className="absolute left-3 top-3 w-4 h-4 text-base-content/40" />
               <button
                 type="button"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 className="absolute right-3 top-3 text-base-content/60 hover:text-base-content"
                 onClick={() => setShowPassword(!showPassword)}
               >
@@ -186,6 +187,7 @@ const ResetPassword = () => {
               <Lock className="absolute left-3 top-3 w-4 h-4 text-base-content/40" />
               <button
                 type="button"
+                aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                 className="absolute right-3 top-3 text-base-content/60 hover:text-base-content"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               >

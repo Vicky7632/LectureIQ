@@ -45,7 +45,7 @@ const StudentDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-linear-to-r from-primary to-secondary text-primary-content p-6 rounded-2xl shadow-lg">
+      <div className="dashboard-banner rounded-2xl p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
             <h1 className="text-3xl font-bold">Welcome back, {user?.firstName}!</h1>
@@ -139,19 +139,19 @@ const StudentDashboard = () => {
             ) : (
               <div className="space-y-4">
                 {courses.map((course) => (
-                  <div key={course._id} className="flex items-center gap-4 p-3 hover:bg-base-200 rounded-lg transition-colors">
-                    <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <div key={course._id} className="flex min-w-0 items-center gap-3 rounded-lg p-3 transition-colors hover:bg-base-200 sm:gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary/10 sm:h-16 sm:w-16">
                       <BookOpen className="w-8 h-8 text-primary" />
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold">{course.title}</h4>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="break-words font-semibold">{course.title}</h4>
                       <p className="text-sm text-gray-500">{course.teacher?.firstName} {course.teacher?.lastName}</p>
                       <div className="flex items-center gap-4 mt-1">
                         <span className="badge badge-sm">{course.level}</span>
                         <span className="text-sm">{course.price > 0 ? `₹${course.price}` : 'Free'}</span>
                       </div>
                     </div>
-                    <Link to={`/course/${course._id}`} className="btn btn-sm btn-ghost">
+                    <Link aria-label={`View ${course.title}`} to={`/course/${course._id}`} className="btn btn-sm btn-ghost btn-circle shrink-0">
                       <ChevronRight size={16} />
                     </Link>
                   </div>

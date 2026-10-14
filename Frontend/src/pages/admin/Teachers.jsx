@@ -97,7 +97,7 @@ const AdminTeachers = () => {
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1">
+        <div className="w-full md:max-w-xl md:flex-1">
           <Input
             type="text"
             placeholder="Search teachers by name or email..."

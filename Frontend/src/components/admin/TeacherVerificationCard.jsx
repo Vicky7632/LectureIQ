@@ -12,8 +12,8 @@ const TeacherVerificationCard = ({
 }) => {
   return (
     <Card className="mb-4">
-      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-        <div className="flex items-start gap-4">
+      <div className="flex min-w-0 flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
           <div className="avatar placeholder">
             <div className="bg-primary text-primary-content rounded-full w-12 h-12">
               <span className="text-lg">
@@ -21,17 +21,17 @@ const TeacherVerificationCard = ({
               </span>
             </div>
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="font-bold text-lg">
               {teacher.firstName} {teacher.lastName}
             </h3>
             <a 
               href={`mailto:${teacher.email}`} 
-              className="text-sm link link-primary flex items-center gap-1 mt-1"
+              className="mt-1 flex min-w-0 items-center gap-1 break-all text-sm link link-primary"
             >
               <Mail size={14} /> {teacher.email}
             </a>
-            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500 sm:gap-4">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
                 Joined: {new Date(teacher.createdAt).toLocaleDateString()}
@@ -46,13 +46,14 @@ const TeacherVerificationCard = ({
         </div>
 
         {!teacher.isEmailVerified && (
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
             <Button
               variant="success"
               size="sm"
               onClick={() => onVerify(teacher._id)}
               loading={isProcessing}
               disabled={isProcessing}
+              className="flex-1 sm:flex-none"
             >
               <CheckCircle size={16} className="mr-1" />
               Verify
@@ -64,6 +65,7 @@ const TeacherVerificationCard = ({
                 onClick={() => onReject(teacher._id)}
                 loading={isProcessing}
                 disabled={isProcessing}
+                className="flex-1 sm:flex-none"
               >
                 <XCircle size={16} className="mr-1" />
                 Reject

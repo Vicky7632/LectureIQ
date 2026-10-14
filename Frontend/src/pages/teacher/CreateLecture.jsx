@@ -142,15 +142,15 @@ const CreateLecture = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="mb-6">
+    <div className="mx-auto w-full max-w-4xl py-4 sm:py-8">
+      <div className="mb-6 space-y-2">
         <button onClick={() => navigate(-1)} className="btn btn-ghost btn-sm gap-2">
           <ArrowLeft size={16} />
           Back
         </button>
-        <h1 className="text-3xl font-bold mt-4">Add New Lecture</h1>
+        <h1 className="pt-2 text-3xl font-semibold tracking-tight">Add New Lecture</h1>
         {course && (
-          <p className="text-gray-600 mt-1">
+          <p className="break-words text-base-content/65">
             Course: <span className="font-medium">{course}</span>
           </p>
         )}
@@ -160,7 +160,7 @@ const CreateLecture = () => {
         {/* Lecture Details Card */}
         <div className="card bg-base-100 shadow-lg border border-base-300">
           <div className="card-body">
-            <h2 className="card-title text-xl mb-4">Lecture Details</h2>
+            <h2 className="card-title text-lg">Lecture Details</h2>
 
             <div className="form-control w-full">
               <label className="label">
@@ -187,7 +187,7 @@ const CreateLecture = () => {
               </label>
               <textarea
                 placeholder="Brief description of what this lecture covers..."
-                className={`textarea textarea-bordered h-24 ${errors.description ? 'textarea-error' : ''}`}
+                className={`textarea textarea-bordered h-24 w-full ${errors.description ? 'textarea-error' : ''}`}
                 {...register('description')}
               />
               {errors.description && (
@@ -203,7 +203,7 @@ const CreateLecture = () => {
                   <span className="label-text font-medium">Lecture Type</span>
                 </label>
                 <select
-                  className={`select select-bordered ${errors.lectureType ? 'select-error' : ''}`}
+                  className={`select select-bordered w-full ${errors.lectureType ? 'select-error' : ''}`}
                   {...register('lectureType')}
                 >
                   <option value="recorded">Recorded Video</option>
@@ -223,7 +223,7 @@ const CreateLecture = () => {
                 <input
                   type="number"
                   min="1"
-                  className={`input input-bordered ${errors.order ? 'input-error' : ''}`}
+                  className={`input input-bordered w-full ${errors.order ? 'input-error' : ''}`}
                   {...register('order', { valueAsNumber: true })}
                 />
                 {errors.order && (
@@ -275,7 +275,7 @@ const CreateLecture = () => {
         {/* Video Upload Card */}
         <div className="card bg-base-100 shadow-lg border border-base-300">
           <div className="card-body">
-            <h2 className="card-title text-xl mb-4">Video Content</h2>
+            <h2 className="card-title text-lg">Video Content</h2>
 
             {uploading ? (
               <div className="text-center py-8">
@@ -294,7 +294,7 @@ const CreateLecture = () => {
               <div className="form-control">
                 <div className="flex items-center justify-center w-full">
                   <label
-                    className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer hover:bg-base-200 transition-colors ${
+                    className={`flex h-56 w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed cursor-pointer hover:bg-base-200 transition-colors sm:h-64 ${
                       videoFile ? 'border-primary' : 'border-base-300'
                     }`}
                   >
@@ -303,7 +303,7 @@ const CreateLecture = () => {
                         <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
                           <Video className="w-16 h-16 text-white" />
                         </div>
-                        <div className="absolute bottom-4 left-4 right-4 bg-black/70 text-white p-3 rounded">
+                        <div className="absolute bottom-4 left-4 right-4 min-w-0 rounded bg-black/70 p-3 text-white">
                           <p className="font-medium truncate">{videoFile.name}</p>
                           <p className="text-sm opacity-75">
                             {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
@@ -311,6 +311,7 @@ const CreateLecture = () => {
                         </div>
                         <button
                           type="button"
+                          aria-label="Remove selected video"
                           onClick={() => setVideoFile(null)}
                           className="absolute top-2 right-2 btn btn-sm btn-circle btn-error"
                         >
@@ -346,18 +347,18 @@ const CreateLecture = () => {
         </div>
 
         {/* Form Actions */}
-        <div className="flex justify-end gap-4">
+        <div className="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end sm:gap-4">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="btn btn-ghost"
+            className="btn btn-ghost w-full sm:w-auto"
             disabled={loading || uploading}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="btn btn-primary px-8"
+            className="btn btn-primary w-full px-8 sm:w-auto"
             disabled={loading || uploading || !videoFile}
           >
             {loading ? (

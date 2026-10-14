@@ -87,12 +87,12 @@ const TeacherCourses = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">My Courses</h1>
-          <p className="text-gray-600 mt-1">Manage your courses and track their status</p>
+      <div className="flex min-w-0 flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="min-w-0">
+          <h1 className="break-words text-3xl font-semibold tracking-tight">My Courses</h1>
+          <p className="mt-1 text-base-content/65">Manage your courses and track their status</p>
         </div>
-        <Link to="/teacher/create-course" className="btn btn-primary">
+        <Link to="/teacher/create-course" className="btn btn-primary w-full shrink-0 sm:w-auto">
           <PlusCircle size={20} className="mr-2" />
           Create New Course
         </Link>
@@ -108,19 +108,19 @@ const TeacherCourses = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               {liveSessions.map((session) => (
-                <div key={session._id} className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-                  <div>
-                    <h4 className="font-semibold">{session.title}</h4>
-                    <p className="text-sm text-gray-600">
+                <div key={session._id} className="flex min-w-0 flex-col gap-4 rounded-lg bg-base-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <h4 className="break-words font-semibold">{session.title}</h4>
+                    <p className="break-words text-sm text-base-content/70">
                       Course: {courses.find(c => c._id === session.course)?.title || 'Unknown'}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="break-words text-sm text-base-content/60">
                       Scheduled: {new Date(session.scheduledTime).toLocaleString()}
                     </p>
                   </div>
                   <Link
                     to={`/live/${session._id}`}
-                    className="btn btn-primary btn-sm gap-2"
+                    className="btn btn-primary btn-sm w-full gap-2 sm:w-auto"
                   >
                     <PlayCircle size={16} />
                     Start Live
@@ -133,7 +133,7 @@ const TeacherCourses = () => {
       )}
 
       {/* Filter Tabs */}
-      <div className="tabs tabs-boxed bg-base-200 p-1">
+      <div className="tabs tabs-boxed w-full bg-base-200 p-1">
         <button
           className={`tab ${filter === 'all' ? 'tab-active' : ''}`}
           onClick={() => setFilter('all')}
@@ -187,12 +187,12 @@ const TeacherCourses = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredCourses.map((course) => (
-            <div key={course._id} className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+            <div key={course._id} className="card min-w-0 bg-base-100 transition-shadow hover:shadow-xl">
               <div className="card-body">
                 {/* Header with title and status */}
-                <div className="flex justify-between items-start mb-2">
-                  <h2 className="card-title text-xl">{course.title}</h2>
-                  {getStatusBadge(course.status)}
+                <div className="mb-2 flex min-w-0 flex-wrap items-start justify-between gap-3">
+                  <h2 className="card-title min-w-0 flex-1 text-xl">{course.title}</h2>
+                  <span className="shrink-0">{getStatusBadge(course.status)}</span>
                 </div>
 
                 {/* Course details */}
@@ -220,7 +220,7 @@ const TeacherCourses = () => {
                 )}
 
                 {/* Action buttons */}
-                <div className="card-actions justify-end mt-4 gap-2">
+                <div className="card-actions mt-4 flex-wrap justify-start gap-2 sm:justify-end">
                   {/* View / Edit */}
                   {course.status === 'published' && (
                     <Link to={`/course/${course._id}`} className="btn btn-sm btn-ghost">

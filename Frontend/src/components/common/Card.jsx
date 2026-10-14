@@ -2,7 +2,7 @@ import React from 'react'
 
 const Card = ({ children, className = '', ...props }) => {
   return (
-    <div className={`card bg-base-100 shadow-xl ${className}`} {...props}>
+    <div className={`card bg-base-100 ${className}`} {...props}>
       <div className="card-body">
         {children}
       </div>

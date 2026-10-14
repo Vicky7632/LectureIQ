@@ -90,7 +90,7 @@ const AdminCourses = () => {
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="form-control flex-1">
+        <div className="form-control w-full md:max-w-xl md:flex-1">
           <div className="relative">
             <input
               type="text"

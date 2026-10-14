@@ -212,18 +212,18 @@ const CreateAdmin = () => {
             </div>
 
             {/* Form Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-base-200">
+            <div className="flex w-full flex-col-reverse gap-3 border-t border-base-200 pt-4 sm:flex-row sm:justify-end">
               <button 
                 type="button" 
                 onClick={() => navigate('/admin/admins')} 
-                className="btn btn-ghost"
+                className="btn btn-ghost w-full sm:w-auto"
                 disabled={loading}
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
-                className="btn btn-primary min-w-[120px]"
+                className="btn btn-primary w-full sm:min-w-[120px] sm:w-auto"
                 disabled={loading}
               >
                 {loading ? (

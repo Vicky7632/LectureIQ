@@ -238,8 +238,8 @@ const LiveSessionRoom = () => {
   if (!session) return <div className="text-center p-8">Session not found</div>;
 
   return (
-    <div className="relative h-screen flex flex-col">
-      <div className="p-4 border-b flex justify-between items-center">
+    <div className="relative flex min-h-[70vh] flex-col overflow-hidden rounded-2xl border border-base-300 bg-base-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 px-4 py-3 sm:px-6">
         <h1 className="text-xl font-bold">{session.title}</h1>
 
         <div>
@@ -261,7 +261,7 @@ const LiveSessionRoom = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center bg-black">
+      <div className="flex min-h-[50vh] flex-1 items-center justify-center bg-[#17201B] sm:min-h-[60vh]">
         {role === "teacher" && (
           <video
             ref={localVideoRef}

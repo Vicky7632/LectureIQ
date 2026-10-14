@@ -21,24 +21,28 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
   }
 
   return (
-    <header className="navbar bg-base-100 shadow-lg sticky top-0 z-50">
-      <div className="flex-1">
-        <button
-          className="btn btn-ghost btn-circle lg:hidden"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          <Menu size={24} />
-        </button>
-        <Link to="/" className="btn btn-ghost text-xl">
-          <BookOpen className="mr-2" />
-         <h1 className="text-3xl font-extrabold tracking-wide">
-              <span className="text-primary">Lecture</span>
-              <span className="text-secondary">IQ</span>
-            </h1>
+    <header className="navbar sticky top-0 z-50 min-h-16 border-b border-base-300 bg-base-100/95 px-3 backdrop-blur-sm sm:px-6">
+      <div className="flex min-w-0 flex-1 items-center">
+        {isAuthenticated && (
+          <button
+            className="btn btn-ghost btn-circle lg:hidden"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label={sidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          >
+            <Menu size={24} />
+          </button>
+        )}
+        <Link to="/" className="btn btn-ghost h-auto gap-2 px-2 text-xl hover:bg-transparent">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-content">
+            <BookOpen size={19} />
+          </span>
+          <span className="text-xl font-bold tracking-tight text-base-content">
+            Lecture<span className="text-primary">IQ</span>
+          </span>
         </Link>
       </div>
 
-      <div className="flex-none gap-4">
+      <div className="flex-none gap-1 sm:gap-3">
         {isAuthenticated ? (
           <>
             <div className="form-control hidden md:block">
@@ -48,20 +52,20 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                   placeholder="Search courses..."
                   className="input input-bordered input-sm"
                 />
-                <button className="btn btn-square btn-sm">
+                <button aria-label="Search courses" className="btn btn-square btn-sm">
                   <Search size={16} />
                 </button>
               </div>
             </div>
 
-            <button className="btn btn-ghost btn-circle btn-sm relative">
+            <button aria-label="Notifications" className="btn btn-ghost btn-circle btn-sm relative">
               <Bell size={20} />
               <span className="badge badge-xs badge-primary absolute -top-1 -right-1"></span>
             </button>
 
             {/* DaisyUI dropdown – NO manual state */}
             <div className="dropdown dropdown-end">
-              <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+              <div tabIndex={0} role="button" aria-label="Open account menu" className="btn btn-ghost btn-circle avatar">
                 <div className="w-8 rounded-full bg-primary text-primary-content flex items-center justify-center">
                   {user?.firstName?.charAt(0) || <User size={16} />}
                 </div>

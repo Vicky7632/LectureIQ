@@ -68,8 +68,8 @@ const EditCourse = () => {
   if (!course) return null
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
+    <div className="mx-auto w-full max-w-4xl">
+      <div className="mb-6 space-y-2">
         <Button
           variant="ghost"
           size="sm"
@@ -78,8 +78,8 @@ const EditCourse = () => {
           <ArrowLeft size={16} className="mr-2" />
           Back
         </Button>
-        <h1 className="text-3xl font-bold mt-4">Edit Course</h1>
-        <p className="text-gray-600">
+        <h1 className="pt-2 text-3xl font-semibold tracking-tight">Edit Course</h1>
+        <p className="text-base-content/65">
           Update your course details – changes will be saved as a draft.
         </p>
         {course.status === 'rejected' && course.rejectionReason && (

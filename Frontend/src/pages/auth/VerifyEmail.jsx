@@ -46,7 +46,7 @@ const VerifyEmail = () => {
   }, [location, navigate])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/10 to-secondary/10 px-4">
+    <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">
       <div className="card bg-base-100 w-full max-w-md shadow-2xl">
         <div className="card-body text-center">
           {loading && (

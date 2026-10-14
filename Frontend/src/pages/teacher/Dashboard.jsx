@@ -57,7 +57,7 @@ const TeacherDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-linear-to-r from-primary to-purple-600 text-primary-content p-6 rounded-2xl shadow-lg">
+      <div className="dashboard-banner rounded-2xl p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
             <h1 className="text-3xl font-bold">Teacher Dashboard</h1>

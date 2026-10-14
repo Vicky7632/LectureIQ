@@ -18,7 +18,16 @@ const LectureList = ({
             key={lecture._id}
             className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors
               ${isActive ? 'bg-primary/20 border border-primary' : 'bg-base-100 hover:bg-base-300'}`}
+            role="button"
+            tabIndex={0}
+            aria-pressed={isActive}
             onClick={() => onSelect && onSelect(lecture)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                onSelect?.(lecture)
+              }
+            }}
           >
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-gray-500">{index + 1}</span>

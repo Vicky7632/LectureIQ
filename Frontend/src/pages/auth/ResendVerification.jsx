@@ -31,8 +31,8 @@ const ResendVerification = () => {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/10 to-secondary/10 px-4">
-        <div className="card bg-base-100 w-full max-w-md shadow-2xl">
+      <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">
+        <div className="card w-full max-w-md bg-base-100">
           <div className="card-body text-center">
             <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <Mail className="w-10 h-10 text-success" />
@@ -52,9 +52,9 @@ const ResendVerification = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/10 to-secondary/10 px-4">
-      <div className="card bg-base-100 w-full max-w-md shadow-2xl">
-        <div className="card-body">
+    <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">
+      <div className="card w-full max-w-md bg-base-100">
+        <div className="card-body px-7 sm:px-8">
           <div className="mb-2">
             <Link to="/login" className="btn btn-ghost btn-sm gap-2">
               <ArrowLeft size={16} />

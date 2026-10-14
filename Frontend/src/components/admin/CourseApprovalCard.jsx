@@ -12,11 +12,11 @@ const CourseApprovalCard = ({
 }) => {
   return (
     <Card className="mb-4">
-      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-        <div className="flex-1">
+      <div className="flex min-w-0 flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-2">
             <BookOpen size={20} className="text-primary" />
-            <h3 className="text-xl font-semibold">{course.title}</h3>
+            <h3 className="break-words text-xl font-semibold">{course.title}</h3>
           </div>
           
           <p className="text-gray-600 line-clamp-2 mb-3">{course.description}</p>
@@ -46,13 +46,14 @@ const CourseApprovalCard = ({
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
           <Button
             variant="success"
             size="sm"
             onClick={() => onApprove(course._id)}
             loading={isProcessing}
             disabled={isProcessing}
+            className="flex-1 sm:flex-none"
           >
             <CheckCircle size={16} className="mr-1" />
             Approve
@@ -63,6 +64,7 @@ const CourseApprovalCard = ({
             onClick={() => onReject(course._id)}
             loading={isProcessing}
             disabled={isProcessing}
+            className="flex-1 sm:flex-none"
           >
             <XCircle size={16} className="mr-1" />
             Reject

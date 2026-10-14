@@ -87,10 +87,10 @@ const CourseForm = ({
   }
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="w-full space-y-6">
       {/* Basic Information Card */}
       <Card>
-        <h2 className="card-title mb-4">Basic Information</h2>
+        <h2 className="card-title text-lg">Basic Information</h2>
         
         <Input
           label="Course Title"
@@ -103,13 +103,13 @@ const CourseForm = ({
           })}
         />
 
-        <div className="form-control w-full mt-4">
+        <div className="form-control w-full">
           <label className="label">
             <span className="label-text">Description <span className="text-error">*</span></span>
           </label>
           <textarea
             placeholder="Describe what students will learn in this course..."
-            className={`textarea textarea-bordered h-32 ${errors.description ? 'textarea-error' : ''}`}
+            className={`textarea textarea-bordered h-32 w-full ${errors.description ? 'textarea-error' : ''}`}
             {...register('description', { 
               required: 'Description is required',
               minLength: { value: 20, message: 'Description must be at least 20 characters' }
@@ -122,13 +122,13 @@ const CourseForm = ({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="form-control w-full">
             <label className="label">
               <span className="label-text">Category <span className="text-error">*</span></span>
             </label>
             <select
-              className={`select select-bordered ${errors.category ? 'select-error' : ''}`}
+              className={`select select-bordered w-full ${errors.category ? 'select-error' : ''}`}
               {...register('category', { required: 'Category is required' })}
             >
               <option value="">Select a category</option>
@@ -148,7 +148,7 @@ const CourseForm = ({
               <span className="label-text">Level <span className="text-error">*</span></span>
             </label>
             <select
-              className={`select select-bordered ${errors.level ? 'select-error' : ''}`}
+              className={`select select-bordered w-full ${errors.level ? 'select-error' : ''}`}
               {...register('level', { required: 'Level is required' })}
             >
               <option value="beginner">Beginner</option>
@@ -166,7 +166,7 @@ const CourseForm = ({
 
       {/* Pricing Card */}
       <Card>
-        <h2 className="card-title mb-4">Pricing</h2>
+        <h2 className="card-title text-lg">Pricing</h2>
         
         <div className="form-control">
           <label className="cursor-pointer label justify-start gap-4">
@@ -201,14 +201,14 @@ const CourseForm = ({
 
       {/* Thumbnail Card */}
       <Card>
-        <h2 className="card-title mb-4">Course Thumbnail</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <h2 className="card-title text-lg">Course Thumbnail</h2>
+        <p className="text-sm leading-6 text-base-content/60">
           Upload a thumbnail image for your course (Optional, max 5MB)
         </p>
         
         <div className="form-control">
           <div className="flex items-center justify-center w-full">
-            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer hover:bg-base-200 transition-colors">
+            <label className="flex h-56 w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-base-300 bg-base-200/50 transition-colors hover:bg-base-200 sm:h-64">
               {thumbnailPreview ? (
                 <div className="relative w-full h-full">
                   <img
@@ -217,6 +217,7 @@ const CourseForm = ({
                     className="w-full h-full object-cover rounded-lg"
                   />
                   <button
+                    aria-label="Remove course thumbnail"
                     type="button"
                     onClick={() => {
                       setThumbnail(null)
@@ -251,13 +252,14 @@ const CourseForm = ({
       </Card>
 
       {/* Form Actions */}
-      <div className="flex justify-end gap-4">
+      <div className="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end sm:gap-4">
         {onCancel && (
           <Button
             type="button"
             variant="ghost"
             onClick={onCancel}
             disabled={loading}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
@@ -267,6 +269,7 @@ const CourseForm = ({
           variant="primary"
           loading={loading}
           disabled={loading}
+          className="w-full sm:w-auto"
         >
           {submitButtonText}
         </Button>

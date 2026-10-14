@@ -19,21 +19,26 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
-    full: 'max-w-full mx-4'
+    full: 'max-w-full'
   }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity" onClick={onClose}>
+        <button
+          type="button"
+          aria-label="Close dialog"
+          className="fixed inset-0 cursor-default transition-opacity"
+          onClick={onClose}
+        >
           <div className="absolute inset-0 bg-black/70"></div>
-        </div>
+        </button>
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        <div className={`inline-block align-bottom bg-base-100 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle ${sizeClasses[size]} w-full`}>
+        <div role="dialog" aria-modal="true" aria-label={title} className={`relative inline-block max-h-[calc(100dvh-2rem)] w-full max-w-full overflow-y-auto align-bottom rounded-lg bg-base-100 text-left shadow-xl transform transition-all sm:my-8 sm:align-middle ${sizeClasses[size]}`}>
           <div className="bg-base-100 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">{title}</h3>
-              <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">✕</button>
+            <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+              <h3 className="min-w-0 text-lg font-semibold">{title}</h3>
+              <button type="button" aria-label="Close dialog" onClick={onClose} className="btn btn-sm btn-circle btn-ghost shrink-0">✕</button>
             </div>
             {children}
           </div>

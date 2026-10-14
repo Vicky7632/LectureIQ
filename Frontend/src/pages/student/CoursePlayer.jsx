@@ -104,7 +104,7 @@ const CoursePlayer = () => {
   if (error) return <div className="text-center text-error p-8">{error}</div>
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(18rem,0.9fr)]">
       {/* Main Video Player */}
       <div className="lg:col-span-2">
         {current ? (
@@ -115,14 +115,16 @@ const CoursePlayer = () => {
               onComplete={handleComplete}
               autoPlay={false}
             />
-            <div className="mt-4 space-y-2">
-              <h2 className="text-2xl font-bold">{current.title}</h2>
-              <p className="text-gray-600">{current.description}</p>
-              <div className="flex items-center gap-4">
-                <span className="badge badge-primary">Lecture {current.order}</span>
-                <span className="text-sm text-gray-500">{current.duration || 0} min</span>
+            <div className="mt-5 space-y-4">
+              <div className="border-b border-base-300 pb-4">
+                <h2 className="text-2xl font-semibold tracking-tight">{current.title}</h2>
+                <p className="mt-2 leading-7 text-base-content/70">{current.description}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <span className="badge badge-primary">Lecture {current.order}</span>
+                  <span className="text-sm text-base-content/60">{current.duration || 0} min</span>
+                </div>
               </div>
-              <section className="rounded-lg border border-base-300 bg-base-100 p-4 space-y-3">
+              <section className="space-y-3 rounded-xl border border-base-300 bg-base-100 p-5 sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h3 className="font-semibold">AI study summary</h3>
                   <button
@@ -134,7 +136,7 @@ const CoursePlayer = () => {
                     {summarizing ? 'Summarizing…' : 'Summarize lecture text'}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-sm text-base-content/60">
                   Generated from this lecture's description, not its video or audio.
                 </p>
                 {!current.description?.trim() && (
@@ -163,8 +165,8 @@ const CoursePlayer = () => {
 
       {/* Lecture List Sidebar */}
       <div className="lg:col-span-1">
-        <div className="bg-base-200 p-4 rounded-lg sticky top-20">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+        <div className="rounded-xl border border-base-300 bg-base-100 p-4 xl:sticky xl:top-24">
+          <h3 className="mb-4 flex items-center gap-2 border-b border-base-300 pb-3 text-lg font-semibold">
             <span>Course Content</span>
             <span className="badge badge-sm">{lectures.length} lectures</span>
           </h3>

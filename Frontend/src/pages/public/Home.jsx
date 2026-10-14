@@ -24,102 +24,169 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-linear-to-r from-primary to-secondary text-primary-content">
-        <div className="container mx-auto px-4 py-20">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6">
-              Learn from the Best, Anytime, Anywhere
+    <div className="-mx-4 -mt-6 overflow-hidden sm:-mx-6 lg:-mx-8">
+      <section className="relative isolate overflow-hidden border-b border-base-300 bg-[#FAF8F3]">
+        <div className="absolute -right-24 -top-32 -z-10 h-96 w-96 rounded-full bg-[#E8EFE6] blur-3xl" />
+        <div className="mx-auto grid max-w-[1440px] items-center gap-12 px-6 py-16 sm:px-10 sm:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:px-14 lg:py-28">
+          <div className="max-w-2xl">
+            <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-base-300 bg-white px-3.5 py-1.5 text-sm font-medium text-base-content/70">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              A more thoughtful way to learn
+            </span>
+            <h1 className="max-w-xl text-4xl font-semibold leading-[1.12] tracking-tight text-base-content sm:text-5xl lg:text-[3.65rem]">
+              Make room for what you want to <span className="text-primary">learn next.</span>
             </h1>
-            <p className="text-xl mb-8 opacity-90">
-              Join thousands of students and teachers on LectureIQ – the ultimate platform for interactive learning.
+            <p className="mt-6 max-w-xl text-base leading-7 text-base-content/70 sm:text-lg">
+              Explore expert-led courses, learn at your own pace, and connect with instructors who care about your progress.
             </p>
-            <div className="flex gap-4 justify-center">
-              <Link to="/courses" className="btn btn-accent btn-lg">
-                Explore Courses
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link to="/courses" className="btn btn-primary btn-lg">
+                Explore courses
+                <ChevronRight className="ml-1 h-5 w-5" />
               </Link>
-              <Link to="/register" className="btn btn-outline btn-lg btn-accent">
-                Start Teaching
+              <Link to="/register" className="btn btn-outline btn-lg">
+                Start teaching
               </Link>
+            </div>
+            <p className="mt-5 text-sm text-base-content/55">
+              Learn on your schedule. Grow at your own pace.
+            </p>
+          </div>
+          <div className="relative mx-auto w-full max-w-lg">
+            <div className="absolute -inset-5 rounded-[2rem] bg-[#E8EFE6]/70 blur-2xl" />
+            <div className="relative overflow-hidden rounded-3xl border border-base-300 bg-white p-5 shadow-[0_20px_60px_rgba(36,39,32,0.09)] sm:p-7">
+              <div className="flex items-center justify-between border-b border-base-300 pb-5">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <BookOpen size={20} />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-base-content">Your learning space</p>
+                    <p className="text-sm text-base-content/55">A little progress, every day</p>
+                  </div>
+                </div>
+                <span className="badge badge-outline border-base-300 bg-base-200 text-base-content/70">Learn</span>
+              </div>
+              <div className="mt-5 space-y-3">
+                <div className="rounded-2xl bg-base-200 p-4 sm:p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Discover</p>
+                      <h2 className="mt-1 text-lg font-semibold text-base-content">Find a course worth your time</h2>
+                    </div>
+                    <BookOpen className="h-5 w-5 shrink-0 text-primary" />
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-base-content/70">Expert instructors</span>
+                    <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-base-content/70">Learn at your pace</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-base-300 bg-white p-4">
+                    <PlayCircle className="mb-3 h-5 w-5 text-primary" />
+                    <p className="font-semibold text-base-content">On-demand lessons</p>
+                    <p className="mt-1 text-xs leading-5 text-base-content/60">Come back whenever it works for you.</p>
+                  </div>
+                  <div className="rounded-2xl border border-base-300 bg-white p-4">
+                    <Users className="mb-3 h-5 w-5 text-primary" />
+                    <p className="font-semibold text-base-content">Real connection</p>
+                    <p className="mt-1 text-xs leading-5 text-base-content/60">Learn alongside a community of teachers and peers.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-16 bg-base-100">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Why Choose LectureIQ?
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="card bg-base-200 shadow-lg">
+      <section className="bg-base-100 px-6 py-16 sm:px-10 lg:px-14 lg:py-20">
+        <div className="mx-auto max-w-[1440px]">
+          <div className="mx-auto mb-10 max-w-xl text-center sm:mb-12">
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">The LectureIQ difference</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-base-content sm:text-4xl">Learning that fits real life</h2>
+            <p className="mt-3 text-base leading-7 text-base-content/65">Everything you need to build knowledge with confidence, in one welcoming place.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="card bg-base-100">
               <div className="card-body items-center text-center">
-                <BookOpen className="w-12 h-12 text-primary mb-4" />
-                <h3 className="card-title">Expert Instructors</h3>
-                <p>Learn from industry professionals with years of experience.</p>
+                <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10"><BookOpen className="h-6 w-6 text-primary" /></span>
+                <h3 className="card-title">Expert instructors</h3>
+                <p className="text-sm leading-6 text-base-content/65">Learn from industry professionals with years of experience.</p>
               </div>
             </div>
-            <div className="card bg-base-200 shadow-lg">
+            <div className="card bg-base-100">
               <div className="card-body items-center text-center">
-                <PlayCircle className="w-12 h-12 text-secondary mb-4" />
-                <h3 className="card-title">HD Video Lectures</h3>
-                <p>High-quality video content that you can stream anywhere.</p>
+                <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10"><PlayCircle className="h-6 w-6 text-primary" /></span>
+                <h3 className="card-title">HD video lectures</h3>
+                <p className="text-sm leading-6 text-base-content/65">High-quality video content that you can stream anywhere.</p>
               </div>
             </div>
-            <div className="card bg-base-200 shadow-lg">
+            <div className="card bg-base-100">
               <div className="card-body items-center text-center">
-                <Users className="w-12 h-12 text-accent mb-4" />
-                <h3 className="card-title">Live Interaction</h3>
-                <p>Engage with instructors and peers in real time.</p>
+                <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10"><Users className="h-6 w-6 text-primary" /></span>
+                <h3 className="card-title">Live interaction</h3>
+                <p className="text-sm leading-6 text-base-content/65">Engage with instructors and peers in real time.</p>
               </div>
             </div>
-            <div className="card bg-base-200 shadow-lg">
+            <div className="card bg-base-100">
               <div className="card-body items-center text-center">
-                <Award className="w-12 h-12 text-green-600 mb-4" />
+                <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10"><Award className="h-6 w-6 text-primary" /></span>
                 <h3 className="card-title">Certification</h3>
-                <p>Earn certificates to showcase your skills.</p>
+                <p className="text-sm leading-6 text-base-content/65">Build useful skills and feel good about how far you’ve come.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Courses */}
-      <section className="py-16 bg-base-200">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Featured Courses</h2>
-            <Link to="/courses" className="btn btn-primary">
-              View All Courses
+      <section className="bg-base-200 px-6 py-16 sm:px-10 lg:px-14 lg:py-20">
+        <div className="mx-auto max-w-[1440px]">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary">A place to begin</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-base-content sm:text-4xl">Explore featured courses</h2>
+              <p className="mt-2 text-base text-base-content/65">Find a subject that sparks your curiosity.</p>
+            </div>
+            <Link to="/courses" className="btn btn-outline">
+              View all courses
               <ChevronRight className="ml-2 w-4 h-4" />
             </Link>
           </div>
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <span className="loading loading-spinner loading-lg"></span>
+              <span className="loading loading-spinner loading-lg text-primary" aria-label="Loading courses"></span>
+            </div>
+          ) : featuredCourses.length === 0 ? (
+            <div className="rounded-2xl border border-base-300 bg-base-100 px-6 py-12 text-center">
+              <BookOpen className="mx-auto mb-3 h-8 w-8 text-primary" aria-hidden="true" />
+              <p className="font-medium text-base-content">New courses are on their way.</p>
+              <p className="mt-1 text-sm text-base-content/60">Explore the course catalog to see what’s available.</p>
+              <Link to="/courses" className="btn btn-outline btn-sm mt-5">Browse all courses</Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredCourses.map((course) => (
-                <div key={course._id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+                <div key={course._id} className="card bg-base-100 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
                   <figure className="px-4 pt-4">
-                    <div className="w-full h-48 bg-primary/10 rounded-xl flex items-center justify-center">
-                      <BookOpen className="w-16 h-16 text-primary" />
-                    </div>
+                    {course.thumbnail ? (
+                      <img src={course.thumbnail} alt="" className="h-48 w-full rounded-xl object-cover" />
+                    ) : (
+                      <div className="flex h-48 w-full items-center justify-center rounded-xl bg-[#E8EFE6]">
+                        <BookOpen className="h-14 w-14 text-primary" />
+                      </div>
+                    )}
                   </figure>
                   <div className="card-body">
-                    <h3 className="card-title">{course.title}</h3>
-                    <p className="text-gray-600 line-clamp-2">{course.description}</p>
+                    <h3 className="card-title text-lg">{course.title}</h3>
+                    <p className="line-clamp-2 text-sm leading-6 text-base-content/65">{course.description}</p>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="badge badge-sm">{course.level}</span>
-                      <span className="badge badge-sm badge-outline">
+                      <span className="badge badge-sm border-0 bg-base-200 text-base-content/70">{course.level}</span>
+                      <span className="badge badge-sm border-base-300 bg-white text-base-content/70">
                         {course.isPaid ? `₹${course.price}` : 'Free'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="mt-2 text-sm text-base-content/60">
                       Instructor: {course.teacher?.firstName} {course.teacher?.lastName}
                     </p>
                     <div className="card-actions justify-end mt-4">
@@ -136,13 +203,13 @@ const Home = () => {
       </section>
 
       {/* CTA */}
-      <section className="bg-primary text-primary-content py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Learning?</h2>
-          <p className="text-xl mb-8 opacity-90">
+      <section className="bg-[#365C45] px-6 py-14 text-white sm:px-10 lg:px-14 lg:py-16">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="mb-4 text-3xl font-semibold tracking-tight sm:text-4xl">Ready to start learning?</h2>
+          <p className="mb-8 text-lg text-white/80">
             Join LectureIQ today and unlock thousands of courses.
           </p>
-          <Link to="/register" className="btn btn-accent btn-lg">
+          <Link to="/register" className="btn btn-lg border-white bg-white text-[#365C45] hover:border-[#F5F2EA] hover:bg-[#F5F2EA]">
             Get Started for Free
           </Link>
         </div>

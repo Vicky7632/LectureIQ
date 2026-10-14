@@ -16,8 +16,8 @@ const Input = ({
   return (
     <div className="form-control w-full">
       {label && (
-        <label className="label">
-          <span className="label-text">{label}{required && <span className="text-error ml-1">*</span>}</span>
+        <label className="label justify-start">
+          <span className="label-text">{label}{required && <span className="text-error ml-1" aria-hidden="true">*</span>}</span>
         </label>
       )}
       <div className="relative">
@@ -32,12 +32,13 @@ const Input = ({
           value={value}
           onChange={onChange}
           disabled={disabled}
-          className={`input input-bordered w-full ${Icon ? 'pl-10' : ''} ${error ? 'input-error' : ''} ${className}`}
+          aria-invalid={Boolean(error)}
+          className={`input input-bordered w-full min-w-0 ${Icon ? 'pl-10' : ''} ${error ? 'input-error' : ''} ${className}`}
           {...props}
         />
       </div>
       {error && (
-        <label className="label">
+        <label className="label justify-start">
           <span className="label-text-alt text-error">{error}</span>
         </label>
       )}

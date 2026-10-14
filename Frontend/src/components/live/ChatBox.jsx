@@ -65,16 +65,16 @@ const ChatBox = ({ isOpen, onClose, lectureId, roomJoined }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 w-80 bg-white shadow-xl rounded-lg border flex flex-col z-50">
-      <div className="flex justify-between items-center p-3 border-b">
+    <div className="fixed bottom-3 right-3 z-50 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-xl sm:bottom-5 sm:right-5">
+      <div className="flex items-center justify-between border-b border-base-300 px-4 py-3">
         <h3 className="font-semibold">Live Chat</h3>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
+        <button onClick={onClose} aria-label="Close live chat" className="btn btn-ghost btn-sm btn-circle text-base-content/60">✕</button>
       </div>
       <div className="flex-1 overflow-y-auto p-3 h-64 space-y-2">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.sender.id === user?._id ? 'justify-end' : 'justify-start'}`}>
             <div className={`px-3 py-2 rounded-lg max-w-xs ${
-              msg.sender.id === user?._id ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              msg.sender.id === user?._id ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content'
             }`}>
             <p className="text-xs font-bold mb-1">
               {msg.sender.id === user?._id
@@ -95,7 +95,7 @@ const ChatBox = ({ isOpen, onClose, lectureId, roomJoined }) => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="flex-1 border rounded-l px-2 py-1 text-sm"
+          className="input input-bordered min-w-0 flex-1 rounded-r-none px-3 text-sm"
           placeholder="Type a message..."
           maxLength={1000}
           disabled={!roomJoined || !socket?.connected}
@@ -103,7 +103,7 @@ const ChatBox = ({ isOpen, onClose, lectureId, roomJoined }) => {
         <button
           type="submit"
           disabled={!roomJoined || !socket?.connected || !input.trim()}
-          className="bg-blue-500 text-white px-3 py-1 rounded-r text-sm disabled:opacity-50"
+          className="btn btn-primary min-h-0 rounded-l-none px-4 text-sm disabled:opacity-50"
         >
           Send
         </button>

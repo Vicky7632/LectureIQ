@@ -54,17 +54,17 @@ const ScheduleLive = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
+    <div className="mx-auto w-full max-w-2xl py-4 sm:py-8">
       <button onClick={() => navigate(-1)} className="btn btn-ghost btn-sm mb-4">
         <ArrowLeft size={16} className="mr-2" /> Back
       </button>
       <div className="card bg-base-100 shadow-lg">
         <div className="card-body">
-          <h2 className="card-title text-2xl mb-4">Schedule Live Lecture</h2>
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <h2 className="card-title text-xl">Schedule Live Lecture</h2>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="form-control">
               <label className="label">Select Course</label>
-              <select className={`select select-bordered ${errors.courseId ? 'select-error' : ''}`} {...register('courseId')}>
+              <select className={`select select-bordered w-full ${errors.courseId ? 'select-error' : ''}`} {...register('courseId')}>
                 <option value="">Choose a course</option>
                 {courses.map(c => (
                   <option key={c._id} value={c._id}>{c.title}</option>
@@ -72,17 +72,17 @@ const ScheduleLive = () => {
               </select>
               {errors.courseId && <p className="text-error text-sm mt-1">{errors.courseId.message}</p>}
             </div>
-            <div className="form-control mt-4">
+            <div className="form-control">
               <label className="label">Title</label>
-              <input className={`input input-bordered ${errors.title ? 'input-error' : ''}`} {...register('title')} />
+              <input className={`input input-bordered w-full ${errors.title ? 'input-error' : ''}`} {...register('title')} />
               {errors.title && <p className="text-error text-sm mt-1">{errors.title.message}</p>}
             </div>
-            <div className="form-control mt-4">
+            <div className="form-control">
               <label className="label">Description (optional)</label>
-              <textarea className="textarea textarea-bordered" {...register('description')} rows="3" />
+              <textarea className="textarea textarea-bordered w-full" {...register('description')} rows="3" />
             </div>
-            <div className="flex justify-end mt-6">
-              <button type="submit" className="btn btn-primary" disabled={loading}>
+            <div className="mt-6 flex w-full justify-end">
+              <button type="submit" className="btn btn-primary w-full sm:w-auto" disabled={loading}>
                 {loading ? 'Scheduling...' : 'Schedule'}
               </button>
             </div>

@@ -16,9 +16,10 @@ const Button = ({
   
   return (
     <button
-      className={`btn ${variantClass} ${sizeClass} ${loading ? 'loading' : ''} ${className}`}
+      className={`btn max-w-full ${variantClass} ${sizeClass} ${loading ? 'loading' : ''} ${className}`}
       disabled={disabled || loading}
       onClick={onClick}
+      aria-busy={loading || undefined}
       {...props}
     >
       {!loading && children}
