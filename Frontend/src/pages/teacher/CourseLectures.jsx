@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { ArrowLeft, Plus, Video, Edit, Trash2, Clock, Eye } from 'lucide-react'
@@ -11,11 +11,7 @@ const CourseLectures = () => {
   const [courseTitle, setCourseTitle] = useState('')
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchLectures()
-  }, [courseId])
-
-  const fetchLectures = async () => {
+  const fetchLectures = useCallback(async () => {
     try {
       setLoading(true)
       const response = await teacherApi.getCourseLectures(courseId)
@@ -27,7 +23,11 @@ const CourseLectures = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [courseId])
+
+  useEffect(() => {
+    fetchLectures()
+  }, [fetchLectures])
 
   const handleDeleteLecture = async (lectureId) => {
     if (!confirm('Are you sure you want to delete this lecture?')) return

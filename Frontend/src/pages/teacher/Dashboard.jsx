@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import React, { useCallback, useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
@@ -8,7 +8,6 @@ import { teacherApi } from '../../api/teacherApi'
 import { logout } from '../../store/slices/authSlice'
 
 const TeacherDashboard = () => {
-  const { user } = useSelector((state) => state.auth)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [courses, setCourses] = useState([])
@@ -20,11 +19,7 @@ const TeacherDashboard = () => {
   })
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchTeacherData()
-  }, [])
-
-  const fetchTeacherData = async () => {
+  const fetchTeacherData = useCallback(async () => {
     try {
       setLoading(true)
       const [coursesRes, statsRes] = await Promise.all([
@@ -53,7 +48,11 @@ const TeacherDashboard = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [dispatch, navigate])
+
+  useEffect(() => {
+    fetchTeacherData()
+  }, [fetchTeacherData])
 
   return (
     <div className="space-y-6">

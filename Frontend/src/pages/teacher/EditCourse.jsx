@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { ArrowLeft } from 'lucide-react'
@@ -17,11 +17,7 @@ const EditCourse = () => {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    fetchCourse()
-  }, [courseId])
-
-  const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
     try {
       setLoading(true)
       const response = await teacherApi.getMyCourses()
@@ -49,12 +45,16 @@ const EditCourse = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [courseId, navigate])
+
+  useEffect(() => {
+    fetchCourse()
+  }, [fetchCourse])
 
   const handleSubmit = async (formData) => {
     try {
       setSubmitting(true)
-      const response = await courseApi.editCourse(courseId, formData)
+      await courseApi.editCourse(courseId, formData)
       toast.success('Course updated successfully!')
       navigate('/teacher/courses')
     } catch (error) {

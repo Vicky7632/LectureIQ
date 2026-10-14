@@ -1,87 +1,87 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
 import { liveApi } from "../../api/liveApi";
-import socketService from "../../utils/socket";
+import { useSocket } from "../../contexts/socketContextHooks";
 import ChatBox from "../../components/live/ChatBox";
+
+const iceServers = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+};
 
 const LiveSessionRoom = () => {
   const { lectureId } = useParams();
   const { role } = useSelector((state) => state.auth);
+  const socket = useSocket();
   const navigate = useNavigate();
 
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
+  const [roomJoined, setRoomJoined] = useState(false);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnection = useRef(null);
-
-  const iceServers = {
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-  };
+  const teacherStreamStarted = useRef(false);
+  const roomJoinedRef = useRef(false);
 
   useEffect(() => {
-    socketService.connect();
-    socketService.emit("lecture:join", { lectureId });
-
-    socketService.on("webrtc:offer", handleOffer);
-    socketService.on("webrtc:answer", handleAnswer);
-    socketService.on("webrtc:ice-candidate", handleIceCandidate);
+    let cancelled = false;
 
     const fetchSession = async () => {
       try {
-        const res = await liveApi.join(lectureId);
-        setSession(res.data);
-      } catch (err) {
-         console.error(err); 
-         toast.error(err?.response?.data?.message || "Failed to load session");
-        navigate(-1);
+        const response = await liveApi.join(lectureId);
+        if (!cancelled) setSession(response.data);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load live session:", error);
+          toast.error(error?.response?.data?.message || "Failed to load session");
+          navigate(-1);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchSession();
-
-    if (role === "teacher") {
-      startTeacherStream();
-    }
-
     return () => {
-      socketService.emit("lecture:leave", { lectureId });
+      cancelled = true;
     };
-  }, []);
+  }, [lectureId, navigate]);
 
-  const startTeacherStream = async () => {
+  const startTeacherStream = useCallback(async () => {
+    let cameraStream;
     try {
-      const cam = await navigator.mediaDevices.getUserMedia({
+      cameraStream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
       });
 
-      const screen = await navigator.mediaDevices.getDisplayMedia({
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
       });
-
-      const combined = new MediaStream([
-        ...cam.getTracks(),
-        ...screen.getTracks(),
+      const combinedStream = new MediaStream([
+        ...cameraStream.getTracks(),
+        ...screenStream.getTracks(),
       ]);
 
-      localVideoRef.current.srcObject = combined;
+      if (!localVideoRef.current) {
+        combinedStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
 
+      localVideoRef.current.srcObject = combinedStream;
       peerConnection.current = new RTCPeerConnection(iceServers);
 
-      combined.getTracks().forEach((track) => {
-        peerConnection.current.addTrack(track, combined);
+      combinedStream.getTracks().forEach((track) => {
+        peerConnection.current.addTrack(track, combinedStream);
       });
 
       peerConnection.current.onicecandidate = (event) => {
         if (event.candidate) {
-          socketService.emit("webrtc:ice-candidate", {
+          socket.emit("webrtc:ice-candidate", {
             lectureId,
             candidate: event.candidate,
           });
@@ -90,56 +90,131 @@ const LiveSessionRoom = () => {
 
       const offer = await peerConnection.current.createOffer();
       await peerConnection.current.setLocalDescription(offer);
-
-      socketService.emit("webrtc:offer", { lectureId, offer });
-    } catch {
+      socket.emit("webrtc:offer", { lectureId, offer });
+      teacherStreamStarted.current = true;
+    } catch (error) {
+      cameraStream?.getTracks().forEach((track) => track.stop());
+      console.error("Failed to start live stream:", error);
       toast.error("Failed to start stream");
     }
-  };
+  }, [lectureId, socket]);
 
-  const handleOffer = async ({ offer }) => {
+  const handleOffer = useCallback(async ({ offer }) => {
     if (role !== "student") return;
 
-    peerConnection.current = new RTCPeerConnection(iceServers);
+    try {
+      peerConnection.current = new RTCPeerConnection(iceServers);
+      peerConnection.current.ontrack = (event) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = event.streams[0];
+        }
+      };
+      peerConnection.current.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit("webrtc:ice-candidate", {
+            lectureId,
+            candidate: event.candidate,
+          });
+        }
+      };
 
-    peerConnection.current.ontrack = (event) => {
-      remoteVideoRef.current.srcObject = event.streams[0];
-    };
+      await peerConnection.current.setRemoteDescription(
+        new RTCSessionDescription(offer)
+      );
+      const answer = await peerConnection.current.createAnswer();
+      await peerConnection.current.setLocalDescription(answer);
+      socket.emit("webrtc:answer", { lectureId, answer });
+    } catch (error) {
+      console.error("Failed to handle live stream offer:", error);
+      toast.error("Failed to connect to live stream");
+    }
+  }, [lectureId, role, socket]);
 
-    peerConnection.current.onicecandidate = (event) => {
-      if (event.candidate) {
-        socketService.emit("webrtc:ice-candidate", {
-          lectureId,
-          candidate: event.candidate,
-        });
-      }
-    };
+  const handleAnswer = useCallback(async ({ answer }) => {
+    if (role !== "teacher" || !peerConnection.current) return;
 
-    await peerConnection.current.setRemoteDescription(
-      new RTCSessionDescription(offer)
-    );
+    try {
+      await peerConnection.current.setRemoteDescription(
+        new RTCSessionDescription(answer)
+      );
+    } catch (error) {
+      console.error("Failed to handle live stream answer:", error);
+    }
+  }, [role]);
 
-    const answer = await peerConnection.current.createAnswer();
-    await peerConnection.current.setLocalDescription(answer);
-
-    socketService.emit("webrtc:answer", { lectureId, answer });
-  };
-
-  const handleAnswer = async ({ answer }) => {
-    if (role !== "teacher") return;
-
-    await peerConnection.current.setRemoteDescription(
-      new RTCSessionDescription(answer)
-    );
-  };
-
-  const handleIceCandidate = async ({ candidate }) => {
+  const handleIceCandidate = useCallback(async ({ candidate }) => {
     if (!peerConnection.current) return;
 
-    await peerConnection.current.addIceCandidate(
-      new RTCIceCandidate(candidate)
-    );
-  };
+    try {
+      await peerConnection.current.addIceCandidate(
+        new RTCIceCandidate(candidate)
+      );
+    } catch (error) {
+      console.error("Failed to apply live stream ICE candidate:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!socket || !session) return undefined;
+
+    const localVideoElement = localVideoRef.current;
+    const remoteVideoElement = remoteVideoRef.current;
+
+    const joinRoom = () => {
+      roomJoinedRef.current = false;
+      setRoomJoined(false);
+      socket.emit("lecture:join", { lectureId }, (response) => {
+        if (!response?.ok) {
+          toast.error(response?.error || "Unable to join live session");
+          return;
+        }
+        roomJoinedRef.current = true;
+        setRoomJoined(true);
+      });
+    };
+    const handleDisconnect = () => {
+      roomJoinedRef.current = false;
+      setRoomJoined(false);
+    };
+
+    socket.on("connect", joinRoom);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("webrtc:offer", handleOffer);
+    socket.on("webrtc:answer", handleAnswer);
+    socket.on("webrtc:ice-candidate", handleIceCandidate);
+    if (socket.connected) joinRoom();
+
+    return () => {
+      socket.off("connect", joinRoom);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("webrtc:offer", handleOffer);
+      socket.off("webrtc:answer", handleAnswer);
+      socket.off("webrtc:ice-candidate", handleIceCandidate);
+      if (socket.connected && roomJoinedRef.current) {
+        socket.emit("lecture:leave", { lectureId });
+      }
+      roomJoinedRef.current = false;
+
+      peerConnection.current?.close();
+      peerConnection.current = null;
+
+      const localStream = localVideoElement?.srcObject;
+      localStream?.getTracks().forEach((track) => track.stop());
+      if (localVideoElement) localVideoElement.srcObject = null;
+
+      const remoteStream = remoteVideoElement?.srcObject;
+      remoteStream?.getTracks().forEach((track) => track.stop());
+      if (remoteVideoElement) remoteVideoElement.srcObject = null;
+
+      teacherStreamStarted.current = false;
+    };
+  }, [socket, session, lectureId, handleOffer, handleAnswer, handleIceCandidate]);
+
+  useEffect(() => {
+    if (role === "teacher" && roomJoined && !teacherStreamStarted.current) {
+      startTeacherStream();
+    }
+  }, [role, roomJoined, startTeacherStream]);
 
   const handleEndSession = async () => {
     if (role !== "teacher") return;
@@ -164,7 +239,6 @@ const LiveSessionRoom = () => {
 
   return (
     <div className="relative h-screen flex flex-col">
-      {/* Header */}
       <div className="p-4 border-b flex justify-between items-center">
         <h1 className="text-xl font-bold">{session.title}</h1>
 
@@ -187,7 +261,6 @@ const LiveSessionRoom = () => {
         </div>
       </div>
 
-      {/* Video Area */}
       <div className="flex-1 flex items-center justify-center bg-black">
         {role === "teacher" && (
           <video
@@ -209,7 +282,13 @@ const LiveSessionRoom = () => {
         )}
       </div>
 
-      <ChatBox isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      <ChatBox
+        key={lectureId}
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        lectureId={lectureId}
+        roomJoined={roomJoined}
+      />
     </div>
   );
 };

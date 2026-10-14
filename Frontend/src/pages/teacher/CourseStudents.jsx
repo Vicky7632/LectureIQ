@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { ArrowLeft, Users, Mail, Calendar, Download } from 'lucide-react'
@@ -10,11 +10,7 @@ const CourseStudents = () => {
   const [courseTitle, setCourseTitle] = useState('')
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchStudents()
-  }, [courseId])
-
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       setLoading(true)
       const response = await teacherApi.getCourseStudents(courseId)
@@ -28,7 +24,11 @@ const CourseStudents = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [courseId])
+
+  useEffect(() => {
+    fetchStudents()
+  }, [fetchStudents])
 
   const handleExport = () => {
     // Simple CSV export

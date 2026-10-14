@@ -9,5 +9,6 @@ export const lectureApi = {
     })
   },
   
-  updateProgress: (lectureId, data) => axiosInstance.put(`/student/lecture/${lectureId}/progress`, data)
+  updateProgress: (lectureId, data) => axiosInstance.put(`/student/lecture/${lectureId}/progress`, data),
+  summarize: (lectureId) => axiosInstance.post(`/lecture/${lectureId}/summary`)
 }

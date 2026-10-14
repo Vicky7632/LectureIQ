@@ -48,7 +48,7 @@ const RazorpayPayment = ({ course, user, onSuccess, onClose }) => {
             
             toast.success('Payment successful!')
             onSuccess()
-          } catch (error) {
+          } catch {
             toast.error('Payment verification failed')
           }
         },

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { 
@@ -20,11 +20,7 @@ const CourseDetail = () => {
   const [enrolled, setEnrolled] = useState(false)
   const [processingPayment, setProcessingPayment] = useState(false)
 
-  useEffect(() => {
-    fetchCourseDetails()
-  }, [id])
-
-  const fetchCourseDetails = async () => {
+  const fetchCourseDetails = useCallback(async () => {
     try {
       setLoading(true)
       const [courseRes, lecturesRes] = await Promise.all([
@@ -43,7 +39,11 @@ const CourseDetail = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    fetchCourseDetails()
+  }, [fetchCourseDetails])
 
   const handleEnroll = async () => {
     if (!isAuthenticated) {
@@ -77,7 +77,7 @@ const CourseDetail = () => {
               
               toast.success('Payment successful! Course enrolled.')
               setEnrolled(true)
-            } catch (error) {
+            } catch {
               toast.error('Payment verification failed')
             }
           },

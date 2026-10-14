@@ -1,50 +1,17 @@
-// import React, { createContext, useContext, useEffect, useState } from 'react';
-// import { io } from 'socket.io-client';
-
-// const SocketContext = createContext();
-
-// export const useSocket = () => useContext(SocketContext);
-
-// export const SocketProvider = ({ children }) => {
-//   const [socket, setSocket] = useState(null);
-
-//   useEffect(() => {
-//     const newSocket = io('http://localhost:3000', {
-//   withCredentials: true,
-//   transports: ['websocket', 'polling'],
-//   reconnection: true,
-//   reconnectionAttempts: 5,
-//   reconnectionDelay: 1000,
-// });
-//     newSocket.on('connect', () => console.log('✅ Socket connected:', newSocket.id));
-//   newSocket.on('disconnect', (reason) => console.log('❌ Socket disconnected, reason:', reason));
-//   newSocket.on('connect_error', (err) => console.log('🔴 Socket connect error:', err.message));
-//     setSocket(newSocket);
-
-//     return () => {
-//       console.log('🧹 Cleaning up socket...');
-//       newSocket.disconnect();
-//     };
-//   }, []);
-
-//   return (
-//     <SocketContext.Provider value={socket}>
-//       {children}
-//     </SocketContext.Provider>
-//   );
-// };
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
-
-const SocketContext = createContext();
-
-export const useSocket = () => useContext(SocketContext);
+import { SharedSocketContext } from './socketContextHooks';
 
 export const SocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const [connection, setConnection] = useState({ socket: null, error: '' });
 
   useEffect(() => {
-    const newSocket = io('http://localhost:3000', {
+    if (!isAuthenticated) return undefined;
+
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+    const sharedSocket = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -52,20 +19,27 @@ export const SocketProvider = ({ children }) => {
       reconnectionDelay: 1000,
     });
 
-    newSocket.on('connect', () => console.log('✅ Socket connected:', newSocket.id));
-    newSocket.on('disconnect', (reason) => console.log('❌ Socket disconnected, reason:', reason));
-    newSocket.on('connect_error', (err) => console.log('🔴 Socket connect error:', err.message));
+    sharedSocket.on('connect', () => {
+      console.info('Socket connected');
+      setConnection({ socket: sharedSocket, error: '' });
+    });
+    sharedSocket.on('disconnect', (reason) => {
+      console.info('Socket disconnected:', reason);
+      setConnection({ socket: sharedSocket, error: 'Disconnected. Reconnecting…' });
+    });
+    sharedSocket.on('connect_error', (error) => {
+      console.error('Socket connection failed:', error.message);
+      setConnection({ socket: sharedSocket, error: error.message });
+    });
 
-    setSocket(newSocket);
+    return () => sharedSocket.disconnect();
+  }, [isAuthenticated]);
 
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
+  const contextValue = isAuthenticated ? connection : { socket: null, error: '' };
 
   return (
-    <SocketContext.Provider value={socket}>
+    <SharedSocketContext.Provider value={contextValue}>
       {children}
-    </SocketContext.Provider>
+    </SharedSocketContext.Provider>
   );
 };

@@ -21,7 +21,7 @@ const UpcomingLive = () => {
         const results = await Promise.all(promises);
         const allSessions = results.flatMap(res => res.data.sessions || []);
         setSessions(allSessions);
-      } catch (err) {
+      } catch {
         toast.error('Failed to load live sessions');
       } finally {
         setLoading(false);

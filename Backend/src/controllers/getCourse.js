@@ -99,11 +99,11 @@ const getCourseLectures = async (req, res) => {
       lectures = await Lecture.find({
         course: courseId,
         isPreview: true,
-      }).select("title duration order isPreview");
+      }).select("title description videoUrl duration order isPreview");
     } else {
       // full access
       lectures = await Lecture.find({ course: courseId }).select(
-        "title duration order isPreview"
+        "title description videoUrl duration order isPreview"
       );
     }
 

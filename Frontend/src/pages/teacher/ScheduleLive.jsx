@@ -28,7 +28,7 @@ const ScheduleLive = () => {
       try {
         const res = await courseApi.getTeacherCourses();
         setCourses(res.data.courses || []);
-      } catch (err) {
+      } catch {
         toast.error('Failed to load courses');
       }
     };

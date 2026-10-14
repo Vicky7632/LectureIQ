@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -45,12 +45,7 @@ const Profile = () => {
     }
   })
 
-  // Fetch fresh profile data on mount
-  useEffect(() => {
-    fetchProfile()
-  }, [])
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true)
       const response = await profileApi.getProfile()   // 👈 sahi API call
@@ -72,7 +67,11 @@ const Profile = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [dispatch, setValue])
+
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
 
   const onUpdateProfile = async (data) => {
   try {

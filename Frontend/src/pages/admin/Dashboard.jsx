@@ -4,7 +4,6 @@ import {
   Users, BookOpen, DollarSign, CheckCircle, XCircle, AlertCircle,
   UserPlus, Shield  // 👈 naye icons import kiye
 } from 'lucide-react'
-import { adminApi } from '../../api/adminApi'
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({

@@ -52,7 +52,6 @@ const Register = () => {
 
   useEffect(() => {
     if (error) {
-      setApiError(error)
       toast.error(error)
     }
   }, [error])
@@ -68,8 +67,8 @@ const Register = () => {
       })).unwrap()
       toast.success('Registration successful! Please verify your email.')
       navigate('/login')
-    } catch (err) {
-      // Error already set in Redux state
+    } catch (submitError) {
+      setApiError(submitError)
     }
   }
 
@@ -104,10 +103,10 @@ const Register = () => {
           </h2>
 
           {/* API Error Alert */}
-          {apiError && (
+          {(apiError || error) && (
             <div className="alert alert-error shadow-sm py-2 px-3 text-sm mb-4">
               <AlertCircle className="w-4 h-4" />
-              <span>{apiError}</span>
+              <span>{apiError || error}</span>
             </div>
           )}
 

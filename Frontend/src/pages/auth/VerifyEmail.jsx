@@ -23,7 +23,7 @@ const VerifyEmail = () => {
       }
 
       try {
-        const response = await authApi.verifyEmail(token)
+        await authApi.verifyEmail(token)
         // If verification is successful, the backend returns a success message
         // and also sets a login cookie automatically
         setSuccess(true)

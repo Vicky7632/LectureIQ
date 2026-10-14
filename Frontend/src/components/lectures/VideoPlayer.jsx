@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useRef } from 'react'
 import ReactPlayer from 'react-player'
 
 const VideoPlayer = ({ url, onProgress, onComplete, autoPlay = false }) => {

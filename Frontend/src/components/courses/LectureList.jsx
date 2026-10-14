@@ -3,7 +3,6 @@ import { PlayCircle, Lock } from 'lucide-react'
 
 const LectureList = ({ 
   lectures, 
-  courseId, 
   enrolled = false, 
   currentLectureId = null,
   onSelect = null 

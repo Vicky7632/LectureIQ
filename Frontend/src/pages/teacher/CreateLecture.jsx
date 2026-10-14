@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -32,7 +32,6 @@ const CreateLecture = () => {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
     setValue,
   } = useForm({
     resolver: zodResolver(lectureSchema),
@@ -46,13 +45,7 @@ const CreateLecture = () => {
     },
   })
 
-  const lectureType = watch('lectureType')
-
-  useEffect(() => {
-    fetchCourseDetails()
-  }, [courseId])
-
-  const fetchCourseDetails = async () => {
+  const fetchCourseDetails = useCallback(async () => {
     try {
       const response = await courseApi.getTeacherCourseLectures(courseId)
       const lectures = response.data.lectures || []
@@ -62,7 +55,11 @@ const CreateLecture = () => {
       console.error('Failed to fetch course:', error)
       toast.error('Failed to load course details')
     }
-  }
+  }, [courseId, setValue])
+
+  useEffect(() => {
+    fetchCourseDetails()
+  }, [fetchCourseDetails])
 
   const handleVideoChange = (e) => {
     const file = e.target.files[0]
@@ -112,10 +109,11 @@ const CreateLecture = () => {
       return
     }
 
+    let cleanupProgress = () => {}
     try {
       setLoading(true)
       setUploading(true)
-      const cleanupProgress = simulateUploadProgress()
+      cleanupProgress = simulateUploadProgress()
 
       const formData = new FormData()
       formData.append('video', videoFile)
@@ -139,6 +137,7 @@ const CreateLecture = () => {
       setLoading(false)
       setUploading(false)
       setUploadProgress(0)
+      cleanupProgress()
     }
   }
 

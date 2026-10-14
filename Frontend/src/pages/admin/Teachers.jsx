@@ -68,7 +68,7 @@ const AdminTeachers = () => {
     }
   }
 
-  const handleRejectTeacher = async (teacherId) => {
+  const handleRejectTeacher = async () => {
     // Optional: implement reject functionality if your backend supports it
     toast.error('Reject functionality not implemented')
   }

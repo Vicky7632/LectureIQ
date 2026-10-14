@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Upload, ArrowLeft } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
@@ -35,7 +35,7 @@ const CourseForm = ({
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors },
     setValue
   } = useForm({
@@ -50,7 +50,7 @@ const CourseForm = ({
     }
   })
 
-  const isPaid = watch('isPaid')
+  const isPaid = useWatch({ control, name: 'isPaid' })
 
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0]
