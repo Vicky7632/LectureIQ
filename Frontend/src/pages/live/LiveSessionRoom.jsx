@@ -154,8 +154,24 @@ const LiveSessionRoom = () => {
   const [streamConnected, setStreamConnected] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState("");
   const roomJoinedRef = useRef(false);
   const roomConnectedRef = useRef(false);
+  const classroomRef = useRef(null);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const fullscreen = document.fullscreenElement === classroomRef.current;
+      setIsFullscreen(fullscreen);
+      if (fullscreen) setFullscreenError("");
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,6 +269,27 @@ const LiveSessionRoom = () => {
     }
   };
 
+  const handleToggleFullscreen = async () => {
+    const classroom = classroomRef.current;
+    if (!classroom) return;
+
+    setFullscreenError("");
+    try {
+      if (document.fullscreenElement === classroom) {
+        await document.exitFullscreen();
+      } else if (classroom.requestFullscreen && document.fullscreenEnabled) {
+        await classroom.requestFullscreen();
+      } else {
+        setFullscreenError("Full screen is not available in this browser.");
+      }
+    } catch (error) {
+      console.error("Unable to change classroom fullscreen mode:", error);
+      setFullscreenError(
+        "Could not change fullscreen mode. Check your browser settings and try again."
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -277,7 +314,14 @@ const LiveSessionRoom = () => {
   }
 
   return (
-    <div className="relative flex min-h-[70vh] flex-col overflow-hidden rounded-2xl border border-base-300 bg-base-100">
+    <div
+      ref={classroomRef}
+      className={`relative flex flex-col overflow-hidden border border-base-300 bg-base-100 ${
+        isFullscreen
+          ? "h-screen min-h-0 w-screen rounded-none"
+          : "min-h-[70vh] rounded-2xl"
+      }`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 px-4 py-3 sm:px-6">
         <div>
           <h1 className="text-xl font-bold">{session.title}</h1>
@@ -294,12 +338,21 @@ const LiveSessionRoom = () => {
           </p>
         </div>
 
-        <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleFullscreen}
+            aria-label={isFullscreen ? "Exit full screen" : "Full screen"}
+            aria-pressed={isFullscreen}
+            className="btn btn-outline btn-sm"
+          >
+            {isFullscreen ? "Exit Full Screen" : "Full Screen"}
+          </button>
           {role === "teacher" && !sessionEnded && (
             <button
               onClick={handleEndSession}
               disabled={endingSession}
-              className="btn btn-error btn-sm mr-2"
+              className="btn btn-error btn-sm"
             >
               {endingSession ? "Ending..." : "End Session"}
             </button>
@@ -314,6 +367,12 @@ const LiveSessionRoom = () => {
           )}
         </div>
       </div>
+
+      {fullscreenError && (
+        <p role="alert" className="border-b border-base-300 px-4 py-2 text-sm text-error">
+          {fullscreenError}
+        </p>
+      )}
 
       <div className="relative min-h-[50vh] flex-1 bg-[#17201B] sm:min-h-[60vh]">
         {sessionEnded ? (

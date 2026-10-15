@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 import { SharedSocketContext } from './socketContextHooks';
+import {
+  resolveSocketUrl,
+  socketClientOptions,
+} from './socketClientConfig';
 
 let sharedSocket = null;
 let disconnectTimer = null;
@@ -19,19 +23,13 @@ export const SocketProvider = ({ children }) => {
     }
 
     if (!sharedSocket) {
-      const socketUrl =
-        import.meta.env.VITE_SOCKET_URL ||
-        import.meta.env.VITE_API_URL ||
-        (import.meta.env.DEV ? 'http://localhost:3000' : window.location.origin);
-      sharedSocket = io(socketUrl, {
-        path: '/socket.io',
-        autoConnect: false,
-        withCredentials: true,
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
+      const socketUrl = resolveSocketUrl({
+        configuredSocketUrl: import.meta.env.VITE_SOCKET_URL,
+        configuredApiUrl: import.meta.env.VITE_API_URL,
+        isDevelopment: import.meta.env.DEV,
+        frontendOrigin: window.location.origin,
       });
+      sharedSocket = io(socketUrl, socketClientOptions);
     }
 
     const socket = sharedSocket;

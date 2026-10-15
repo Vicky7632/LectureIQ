@@ -1,8 +1,11 @@
 import axios from 'axios'
+import { resolveApiUrl } from '../contexts/socketClientConfig'
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? 'http://localhost:3000' : window.location.origin)
+const API_URL = resolveApiUrl({
+  configuredApiUrl: import.meta.env.VITE_API_URL,
+  isDevelopment: import.meta.env.DEV,
+  frontendOrigin: window.location.origin,
+})
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
