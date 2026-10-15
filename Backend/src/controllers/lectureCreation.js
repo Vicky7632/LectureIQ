@@ -1,6 +1,8 @@
 const Lecture = require("../models/lecture");
 const Course = require("../models/course");
+const Enrollment = require("../models/enrollment");
 const cloudinary = require('../config/cloudinary'); 
+const { loadAuthorizedLiveLecture } = require("../services/liveLectureAccess");
 
 const createLecture = async (req, res) => {
   try {
@@ -232,6 +234,11 @@ const endLiveLecture = async (req, res) => {
 
     await lecture.save();
 
+    req.app?.get?.("io")?.to(lectureId).emit("lecture:ended", {
+      lectureId,
+      endedAt: lecture.endedAt,
+    });
+
     res.status(200).json({
       message: "Live session ended and saved successfully",
       lecture,
@@ -263,11 +270,27 @@ const getUpcomingLiveLectures = async (req, res) => {
     const { courseId } = req.params;
     const user = req.user; // authMiddleware se aaya
 
-    let query = { course: courseId, lectureType: 'live', liveStatus: 'scheduled' };
+    let query = {
+      course: courseId,
+      lectureType: "live",
+      liveStatus: "scheduled",
+    };
     
-    // Teacher ke liye sirf apne courses ke lectures
-    if (user.role === 'teacher') {
+    if (user.role === "teacher") {
       query.teacher = user._id;
+    } else if (user.role === "student") {
+      const [course, enrollment] = await Promise.all([
+        Course.findOne({ _id: courseId, status: "published" }).select("_id"),
+        Enrollment.findOne({
+          student: user._id,
+          course: courseId,
+          status: "active",
+        }).select("_id"),
+      ]);
+      if (!course || !enrollment) {
+        return res.status(403).json({ message: "Course access denied" });
+      }
+      query.liveStatus = { $in: ["scheduled", "live"] };
     }
 
     const lectures = await Lecture.find(query).sort({ scheduledTime: 1 });
@@ -278,11 +301,22 @@ const getUpcomingLiveLectures = async (req, res) => {
 };
 const getLectureById = async (req, res) => {
   try {
-    const lecture = await Lecture.findById(req.params.lectureId)
-      .populate('course', 'title')
-      .populate('teacher', 'firstName lastName');
-    if (!lecture) return res.status(404).json({ message: 'Lecture not found' });
-    res.json(lecture);
+    const access = await loadAuthorizedLiveLecture(
+      req.user,
+      req.params.lectureId
+    );
+    if (access.error) {
+      return res.status(access.status).json({ message: access.error });
+    }
+    const { lecture } = access;
+    return res.json({
+      _id: lecture._id,
+      title: lecture.title,
+      description: lecture.description,
+      liveStatus: lecture.liveStatus,
+      startedAt: lecture.startedAt,
+      endedAt: lecture.endedAt,
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

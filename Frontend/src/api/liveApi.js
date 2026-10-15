@@ -15,4 +15,8 @@ export const liveApi = {
 
   // Join live session (returns session details)
   join: (lectureId) => axiosInstance.get(`/lecture/${lectureId}/join`),
+
+  // Get a short-lived, role-limited LiveKit room token
+  getToken: (lectureId) =>
+    axiosInstance.get(`/lecture/${lectureId}/livekit-token`),
 };

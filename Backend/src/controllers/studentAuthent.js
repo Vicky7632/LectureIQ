@@ -39,8 +39,12 @@ const register =async (req,res)=>{
       process.env.JWT_KEY,
       { expiresIn: "24h" }
     );
-    console.log("EMAIL VERIFY TOKEN:", emailVerifyToken);
-    const verifyLink = `${process.env.FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
+    await redisClient.set(
+      `email_verify:${emailVerifyToken}`,
+      student._id.toString(),
+      { EX: 60 * 60 * 24 }
+    );
+    const verifyLink = `${FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
 
     // email sending should NOT break registration
     try {
@@ -367,7 +371,7 @@ const verifyEmail = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (student.isVerified) {
+    if (student.isEmailVerified) {
       return res.status(400).json({ message: "Email already verified" });
     }
 
@@ -426,7 +430,7 @@ const resendVerification = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (student.isVerified) {
+    if (student.isEmailVerified) {
       return res.status(400).json({ message: "Email already verified" });
     }
 
@@ -446,7 +450,7 @@ const resendVerification = async (req, res) => {
       { EX: 60 * 60 * 24 }
     );
 
-    const verifyLink = `${process.env.BACKEND_URL}/auth/verify-email?token=${emailVerifyToken}`;
+    const verifyLink = `${FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
 
     await sendEmail(
       student.email,
@@ -585,8 +589,12 @@ const adminRegister = async (req, res) => {
       { expiresIn: "24h" }
     );
 
-   const verifyLink =
-  `${process.env.FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
+    await redisClient.set(
+      `email_verify:${emailVerifyToken}`,
+      admin._id.toString(),
+      { EX: 60 * 60 * 24 }
+    );
+    const verifyLink = `${FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
 
 
     try {

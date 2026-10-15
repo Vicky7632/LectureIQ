@@ -54,7 +54,20 @@ const EditCourse = () => {
   const handleSubmit = async (formData) => {
     try {
       setSubmitting(true)
-      await courseApi.editCourse(courseId, formData)
+      const thumbnailFile = formData.get('thumbnail')
+      if (thumbnailFile instanceof File && thumbnailFile.size > 0) {
+        toast.error('The course edit endpoint does not support thumbnail uploads.')
+        return
+      }
+
+      await courseApi.editCourse(courseId, {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        category: formData.get('category'),
+        level: formData.get('level'),
+        price: Number(formData.get('price')) || 0,
+        thumbnail: formData.get('thumbnailUrl') || '',
+      })
       toast.success('Course updated successfully!')
       navigate('/teacher/courses')
     } catch (error) {
@@ -88,6 +101,9 @@ const EditCourse = () => {
             <p>{course.rejectionReason}</p>
           </div>
         )}
+        <p className="text-sm text-base-content/60">
+          This backend edit endpoint accepts a thumbnail URL, not an image upload.
+        </p>
       </div>
 
       <CourseForm

@@ -22,6 +22,7 @@
     "express": "^5.2.1",
     "google-auth-library": "^10.5.0",
     "jsonwebtoken": "^9.0.3",
+    "livekit-server-sdk": "^2.19.1",
     "mongoose": "^9.1.1",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
 import { toast } from 'react-hot-toast'
 import { CheckCircle, XCircle, Loader } from 'lucide-react'
 import { authApi } from '../../api/authApi'
+import { setUser } from '../../store/slices/authSlice'
 
 const VerifyEmail = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const dispatch = useDispatch()
   const [loading, setLoading] = useState(true)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -23,15 +26,22 @@ const VerifyEmail = () => {
       }
 
       try {
-        await authApi.verifyEmail(token)
-        // If verification is successful, the backend returns a success message
-        // and also sets a login cookie automatically
+        const response = await authApi.verifyEmail(token)
+        const student = response.data.student
+        if (!student?._id || !student.role) {
+          throw new Error('Verification response did not include the signed-in user.')
+        }
+        dispatch(setUser({ user: student }))
         setSuccess(true)
         toast.success('Email verified successfully! You are now logged in.')
         
-        // Wait a moment then redirect to dashboard
+        const dashboardPath = {
+          student: '/student/dashboard',
+          teacher: '/teacher/dashboard',
+          admin: '/admin/dashboard',
+        }[student.role]
         setTimeout(() => {
-          navigate('/dashboard')
+          navigate(dashboardPath || '/')
         }, 3000)
       } catch (err) {
         const message = err.response?.data?.message || 'Email verification failed'
@@ -43,7 +53,7 @@ const VerifyEmail = () => {
     }
 
     verifyEmailToken()
-  }, [location, navigate])
+  }, [dispatch, location, navigate])
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center bg-base-200 px-4 py-10">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
-import { Users, Mail, Search, Calendar } from 'lucide-react'
+import { Users, Mail, Search } from 'lucide-react'
 import { adminApi } from '../../api/adminApi'
 
 const AdminStudents = () => {
@@ -69,7 +69,6 @@ const AdminStudents = () => {
               <tr>
                 <th>Student</th>
                 <th>Email</th>
-                <th>Joined</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -93,7 +92,6 @@ const AdminStudents = () => {
                       {student.email}
                     </a>
                   </td>
-                  <td>{new Date(student.createdAt).toLocaleDateString()}</td>
                   <td>
                     {student.isActive ? (
                       <span className="badge badge-success">Active</span>
@@ -104,7 +102,7 @@ const AdminStudents = () => {
                 </tr>
               ))}
               {filteredStudents.length === 0 && (
-                <tr><td colSpan="4" className="text-center py-8">No students found</td></tr>
+                <tr><td colSpan="3" className="text-center py-8">No students found</td></tr>
               )}
             </tbody>
           </table>

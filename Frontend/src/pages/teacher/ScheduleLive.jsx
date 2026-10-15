@@ -27,7 +27,7 @@ const ScheduleLive = () => {
     const fetchCourses = async () => {
       try {
         const res = await courseApi.getTeacherCourses();
-        setCourses(res.data.courses || []);
+        setCourses((res.data.courses || []).filter((course) => course.status !== 'rejected'));
       } catch {
         toast.error('Failed to load courses');
       }
@@ -45,7 +45,7 @@ const ScheduleLive = () => {
         order: 1, // backend will adjust based on lectures count
       });
       toast.success('Live lecture scheduled');
-      navigate('/teacher/dashboard');
+      navigate('/teacher/courses');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Scheduling failed');
     } finally {

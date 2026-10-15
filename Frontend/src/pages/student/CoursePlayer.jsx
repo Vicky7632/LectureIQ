@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { courseApi, lectureApi, teacherApi } from '../../api'
 import VideoPlayer from '../../components/lectures/VideoPlayer'
@@ -153,12 +153,23 @@ const CoursePlayer = () => {
       <div className="lg:col-span-2">
         {current ? (
           <>
-            <VideoPlayer
-              url={current.videoUrl}
-              onProgress={handleProgress}
-              onComplete={handleComplete}
-              autoPlay={false}
-            />
+            {current.videoUrl ? (
+              <VideoPlayer
+                url={current.videoUrl}
+                onProgress={handleProgress}
+                onComplete={handleComplete}
+                autoPlay={false}
+              />
+            ) : (
+              <div className="rounded-xl border border-base-300 bg-base-100 p-8 text-center">
+                <p className="font-medium">No recorded video is available for this lecture.</p>
+                {role === 'student' && (
+                  <Link to="/student/upcoming-live" className="btn btn-primary btn-sm mt-4">
+                    Check live sessions
+                  </Link>
+                )}
+              </div>
+            )}
             <div className="mt-5 space-y-4">
               <div className="border-b border-base-300 pb-4">
                 <h2 className="text-2xl font-semibold tracking-tight">{current.title}</h2>
@@ -197,7 +208,7 @@ const CoursePlayer = () => {
                   </div>
                 )}
               </section>
-              <ProgressBar progress={progress} />
+              {current.videoUrl && <ProgressBar progress={progress} />}
               {progressError && (
                 <p role="status" className="text-sm text-warning">
                   {progressError}

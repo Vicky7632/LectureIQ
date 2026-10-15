@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
-import { ArrowLeft, Plus, Video, Edit, Trash2, Clock, Play } from 'lucide-react'
+import { ArrowLeft, Plus, Video, Clock, Play } from 'lucide-react'
 import { teacherApi } from '../../api/teacherApi'
 
 const CourseLectures = () => {
@@ -28,18 +28,6 @@ const CourseLectures = () => {
   useEffect(() => {
     fetchLectures()
   }, [fetchLectures])
-
-  const handleDeleteLecture = async (lectureId) => {
-    if (!confirm('Are you sure you want to delete this lecture?')) return
-    
-    try {
-      await teacherApi.deleteLecture(lectureId)
-      toast.success('Lecture deleted successfully')
-      fetchLectures() // Refresh list
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete lecture')
-    }
-  }
 
   if (loading) {
     return (
@@ -139,18 +127,6 @@ const CourseLectures = () => {
                     >
                       <Play size={16} />
                     </Link>
-                    <Link
-                      to={`/teacher/lecture/${lecture._id}/edit`}
-                      className="btn btn-sm btn-ghost"
-                    >
-                      <Edit size={16} />
-                    </Link>
-                    <button
-                      onClick={() => handleDeleteLecture(lecture._id)}
-                      className="btn btn-sm btn-ghost text-error"
-                    >
-                      <Trash2 size={16} />
-                    </button>
                   </div>
                 </div>
               </div>

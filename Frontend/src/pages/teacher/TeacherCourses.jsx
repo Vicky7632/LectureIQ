@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast'
 import { 
   BookOpen, PlusCircle, Edit, Video, Users, 
   CheckCircle, Clock, AlertCircle, Eye, XCircle,
-  PlayCircle, Calendar   // 👈 naye icons import kiye
+  PlayCircle, Calendar
 } from 'lucide-react'
 import { teacherApi } from '../../api/teacherApi'
 import { courseApi } from '../../api/courseApi'
@@ -30,11 +30,19 @@ const TeacherCourses = () => {
       setCourses(coursesList)
       
       // 🆕 Fetch live sessions for each course
-      const sessionsPromises = coursesList.map(course => 
-        liveApi.getUpcoming(course._id).catch(() => ({ data: { sessions: [] } }))
+      const sessionsResults = await Promise.allSettled(
+        coursesList.map((course) => liveApi.getUpcoming(course._id))
       )
-      const sessionsResults = await Promise.all(sessionsPromises)
-      const allSessions = sessionsResults.flatMap(res => res.data.sessions || [])
+      const failedSessionRequests = sessionsResults.filter(
+        (result) => result.status === 'rejected'
+      )
+      if (failedSessionRequests.length > 0) {
+        console.error('Failed to load live sessions:', failedSessionRequests)
+        toast.error('Some live sessions could not be loaded')
+      }
+      const allSessions = sessionsResults.flatMap((result) =>
+        result.status === 'fulfilled' ? result.value.data.sessions || [] : []
+      )
       setLiveSessions(allSessions)
       
     } catch (error) {
@@ -110,10 +118,16 @@ const TeacherCourses = () => {
           <h1 className="break-words text-3xl font-semibold tracking-tight">My Courses</h1>
           <p className="mt-1 text-base-content/65">Manage your courses and track their status</p>
         </div>
-        <Link to="/teacher/create-course" className="btn btn-primary w-full shrink-0 sm:w-auto">
-          <PlusCircle size={20} className="mr-2" />
-          Create New Course
-        </Link>
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
+          <Link to="/teacher/schedule-live" className="btn btn-outline w-full sm:w-auto">
+            <Calendar size={18} className="mr-2" />
+            Schedule Live
+          </Link>
+          <Link to="/teacher/create-course" className="btn btn-primary w-full sm:w-auto">
+            <PlusCircle size={20} className="mr-2" />
+            Create New Course
+          </Link>
+        </div>
       </div>
 
       {/* 🆕 Live Sessions Section */}
@@ -133,7 +147,7 @@ const TeacherCourses = () => {
                       Course: {courses.find(c => c._id === session.course)?.title || 'Unknown'}
                     </p>
                     <p className="break-words text-sm text-base-content/60">
-                      Scheduled: {new Date(session.scheduledTime).toLocaleString()}
+                      Status: Scheduled
                     </p>
                   </div>
                   <button

@@ -29,7 +29,7 @@ const createCourse = async (req, res) => {
       isPaid,
       teacher: teacherId,
       status: "draft",
-      thumbnail,
+      thumbnail: req.thumbnailData?.thumbnailUrl,
     });
 
     return res.status(201).json({

@@ -31,6 +31,7 @@ const CourseForm = ({
 }) => {
   const [thumbnail, setThumbnail] = useState(null)
   const [thumbnailPreview, setThumbnailPreview] = useState(initialData?.thumbnail || '')
+  const isEditing = Boolean(initialData)
 
   const {
     register,
@@ -53,6 +54,7 @@ const CourseForm = ({
   const isPaid = useWatch({ control, name: 'isPaid' })
 
   const handleThumbnailChange = (e) => {
+    if (isEditing) return
     const file = e.target.files[0]
     if (!file) return
 
@@ -203,12 +205,14 @@ const CourseForm = ({
       <Card>
         <h2 className="card-title text-lg">Course Thumbnail</h2>
         <p className="text-sm leading-6 text-base-content/60">
-          Upload a thumbnail image for your course (Optional, max 5MB)
+          {isEditing
+            ? 'The existing thumbnail can be kept or removed while editing.'
+            : 'Upload a thumbnail image for your course (Optional, max 5MB)'}
         </p>
         
         <div className="form-control">
           <div className="flex items-center justify-center w-full">
-            <label className="flex h-56 w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-base-300 bg-base-200/50 transition-colors hover:bg-base-200 sm:h-64">
+            <label className={`flex h-56 w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-base-300 bg-base-200/50 transition-colors sm:h-64 ${isEditing ? '' : 'hover:bg-base-200'}`}>
               {thumbnailPreview ? (
                 <div className="relative w-full h-full">
                   <img
@@ -231,13 +235,19 @@ const CourseForm = ({
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    PNG, JPG, JPEG up to 5MB
-                  </p>
+                  {isEditing ? (
+                    <p className="text-sm text-gray-500">No thumbnail is currently set.</p>
+                  ) : (
+                    <>
+                      <Upload className="w-12 h-12 text-gray-400 mb-4" />
+                      <p className="mb-2 text-sm text-gray-500">
+                        <span className="font-semibold">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, JPEG up to 5MB
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
               <input
@@ -245,6 +255,7 @@ const CourseForm = ({
                 className="hidden"
                 accept="image/*"
                 onChange={handleThumbnailChange}
+                disabled={isEditing}
               />
             </label>
           </div>

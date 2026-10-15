@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Calendar, Clock } from 'lucide-react';
 import { enrollmentApi } from '../../api/enrollmentApi';
 import { liveApi } from '../../api/liveApi';
 
@@ -14,7 +13,10 @@ const UpcomingLive = () => {
       try {
         // Get enrolled courses first, then fetch live sessions for each
         const enrollRes = await enrollmentApi.getMyEnrollments();
-        const enrolledCourses = enrollRes.data.enrollments.map(e => e.course._id);
+        const enrolledCourses = enrollRes.data.enrollments
+          .filter((enrollment) => enrollment.status === 'active')
+          .map((enrollment) => enrollment.course?._id)
+          .filter(Boolean);
         
         // For each course, fetch live sessions
         const promises = enrolledCourses.map(courseId => liveApi.getUpcoming(courseId));
@@ -44,20 +46,23 @@ const UpcomingLive = () => {
               <div className="card-body">
                 <h2 className="card-title">{session.title}</h2>
                 <p className="text-sm text-gray-600">{session.description}</p>
-                <div className="flex items-center gap-4 mt-2 text-sm">
-                  <div className="flex items-center gap-1">
-                    <Calendar size={16} />
-                    {new Date(session.scheduledTime).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock size={16} />
-                    {new Date(session.scheduledTime).toLocaleTimeString()}
-                  </div>
+                <div className="mt-2 text-sm">
+                  {session.liveStatus === 'live' ? (
+                    <span className="badge badge-success">Live now</span>
+                  ) : (
+                    <span className="badge badge-ghost">Scheduled</span>
+                  )}
                 </div>
                 <div className="card-actions justify-end mt-4">
-                  <Link to={`/live/${session._id}`} className="btn btn-primary btn-sm">
-                    Join
-                  </Link>
+                  {session.liveStatus === 'live' ? (
+                    <Link to={`/live/${session._id}`} className="btn btn-primary btn-sm">
+                      Join
+                    </Link>
+                  ) : (
+                    <button type="button" className="btn btn-sm" disabled>
+                      Not started
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

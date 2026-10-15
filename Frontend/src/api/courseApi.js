@@ -7,7 +7,9 @@ export const courseApi = {
   getCourseLectures: (courseId) => axiosInstance.get(`/user/course/${courseId}/lectures`),
   
   // Teacher endpoints
-  createCourse: (data) => axiosInstance.post('/course/create', data),
+  createCourse: (data) => axiosInstance.post('/course/create', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   editCourse: (courseId, data) => axiosInstance.patch(`/course/edit/${courseId}`, data),
   submitForReview: (courseId) => axiosInstance.patch(`/course/submit/${courseId}`),
   getTeacherCourses: () => axiosInstance.get('/teacher/my-courses'),

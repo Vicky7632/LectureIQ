@@ -13,7 +13,7 @@ LectureIQ includes AI-generated study summaries of the lecture description text.
 - Student enrollment, course access, and lecture progress tracking.
 - Recorded lecture uploads and scheduled live lectures.
 - On-demand AI study summaries generated from lecture descriptions.
-- Live-session UI with Socket.IO room events, chat, and WebRTC signaling/media support.
+- Live-session UI with LiveKit Cloud video/audio media and Socket.IO chat/classroom events.
 - Razorpay course payments, payment verification, and a webhook endpoint.
 - Teacher and admin dashboards for courses, students, enrollments, payments, and revenue.
 - Cloudinary-backed media upload configuration.
@@ -27,8 +27,8 @@ LectureIQ includes AI-generated study summaries of the lecture description text.
 | Redux Toolkit, Redux Persist | Redis |
 | Axios | Socket.IO |
 | Tailwind CSS, DaisyUI | JWT, bcrypt |
-| Socket.IO Client, WebRTC browser APIs | Google OAuth verification, OpenAI text generation, Nodemailer |
-| React Player | Cloudinary, Multer, Razorpay |
+| Socket.IO Client, LiveKit React components | Google OAuth verification, OpenAI text generation, Nodemailer |
+| React Player | LiveKit server SDK, Cloudinary, Multer, Razorpay |
 
 ## Architecture and Request Flow
 
@@ -36,7 +36,7 @@ LectureIQ includes AI-generated study summaries of the lecture description text.
 2. Axios includes cookies. Express parses JSON and cookies, applies its CORS policy, and dispatches requests to the mounted route groups.
 3. Authentication and role middleware validate the JWT cookie, check the Redis token blocklist, and load the account from MongoDB.
 4. Controllers read or update MongoDB records and use configured integrations for email, media uploads, and payments.
-5. The same HTTP server hosts Socket.IO for live-session room events and WebRTC signaling.
+5. The same HTTP server hosts Socket.IO for authenticated live-session chat and classroom events. It issues role-limited, short-lived LiveKit room tokens; LiveKit Cloud carries real-time media.
 
 ## Project Structure
 
@@ -52,7 +52,7 @@ LectureIQ/
 │       ├── routes/       # Express route groups
 │       ├── utils/        # Email and validation helpers
 │       ├── index.js      # Express and Socket.IO server entry point
-│       └── socket.js     # Socket.IO room, chat, and signaling events
+│       └── socket.js     # Socket.IO room, chat, and classroom events
 ├── Frontend/
 │   ├── package.json
 │   ├── public/
@@ -135,6 +135,8 @@ OPENAI_API_KEY=your_openai_api_key
 ```
 
 `DB_CONNECTION_STRING`, `JWT_KEY`, `PORT`, and `REDIS_PASS` are required for the backend's normal startup and authentication flow. `OPENAI_API_KEY` is required to use lecture summarization. The current Redis host is hard-coded in the source; `REDIS_PASS` does not configure the host. Set the other third-party credentials for the features you use.
+
+Live classrooms require `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `LIVEKIT_URL` in `Backend/.env`. Keep the API key and secret server-side; the authenticated token endpoint returns only a short-lived room token and the LiveKit server URL to authorized participants.
 
 ### Frontend — `Frontend/.env`
 

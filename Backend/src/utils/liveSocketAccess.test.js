@@ -105,11 +105,20 @@ test("allows only the owner, active enrolled students, and active admins into li
   );
 });
 
-test("rejects inactive users and non-live or ended lectures", () => {
+test("rejects inactive users and scheduled or ended lectures", () => {
   assert.equal(
     canJoinLiveLecture({
       user: user("student", studentId, { isActive: false }),
       lecture,
+      course,
+      hasActiveEnrollment: true,
+    }),
+    false
+  );
+  assert.equal(
+    canJoinLiveLecture({
+      user: user("student", studentId),
+      lecture: { ...lecture, liveStatus: "scheduled" },
       course,
       hasActiveEnrollment: true,
     }),

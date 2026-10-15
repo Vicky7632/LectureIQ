@@ -10,6 +10,12 @@ import { Eye, EyeOff, AlertCircle, User, Mail, Lock } from 'lucide-react'
 import { register as registerUser, googleLogin } from '../../store/slices/authSlice'
 import GoogleIdentityButton from '../../components/auth/GoogleIdentityButton'
 
+const getDashboardPath = (role) => ({
+  student: '/student/dashboard',
+  teacher: '/teacher/dashboard',
+  admin: '/admin/dashboard',
+}[role] || '/')
+
 // Zod validation schema
 const registerSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -30,7 +36,7 @@ const registerSchema = z.object({
 const Register = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { isAuthenticated, loading, error } = useSelector((state) => state.auth)
+  const { isAuthenticated, loading, error, user } = useSelector((state) => state.auth)
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -46,9 +52,9 @@ const Register = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard')
+      navigate(getDashboardPath(user?.role))
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate, user?.role])
 
   useEffect(() => {
     if (error) {
@@ -74,9 +80,9 @@ const Register = () => {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      await dispatch(googleLogin(credentialResponse.credential)).unwrap()
+      const { user: loggedInUser } = await dispatch(googleLogin(credentialResponse.credential)).unwrap()
       toast.success('Google signup successful!')
-      navigate('/dashboard')
+      navigate(getDashboardPath(loggedInUser.role))
     } catch (err) {
       setApiError(err || 'Google signup failed')
     }

@@ -10,6 +10,12 @@ import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { login, googleLogin } from '../../store/slices/authSlice'
 import GoogleIdentityButton from '../../components/auth/GoogleIdentityButton'
 
+const getDashboardPath = (role) => ({
+  student: '/student/dashboard',
+  teacher: '/teacher/dashboard',
+  admin: '/admin/dashboard',
+}[role] || '/')
+
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -18,7 +24,7 @@ const loginSchema = z.object({
 const Login = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { isAuthenticated, loading, error } = useSelector((state) => state.auth)
+  const { isAuthenticated, loading, error, user } = useSelector((state) => state.auth)
 
   const [showPassword, setShowPassword] = useState(false)
   const [apiError, setApiError] = useState('')
@@ -33,9 +39,9 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard')
+      navigate(getDashboardPath(user?.role))
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate, user?.role])
 
   useEffect(() => {
     if (error) {
@@ -46,9 +52,9 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       setApiError('')
-      await dispatch(login(data)).unwrap()
+      const { user: loggedInUser } = await dispatch(login(data)).unwrap()
       toast.success('Login successful!')
-      navigate('/dashboard')
+      navigate(getDashboardPath(loggedInUser.role))
     } catch (submitError) {
       setApiError(submitError)
     }
@@ -56,9 +62,9 @@ const Login = () => {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      await dispatch(googleLogin(credentialResponse.credential)).unwrap()
+      const { user: loggedInUser } = await dispatch(googleLogin(credentialResponse.credential)).unwrap()
       toast.success('Google login successful!')
-      navigate('/dashboard')
+      navigate(getDashboardPath(loggedInUser.role))
     } catch (err) {
       setApiError(err || 'Google login failed')
     }

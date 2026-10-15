@@ -18,7 +18,7 @@ export const teacherApi = {
 
   // Edit course details
   editCourse: (courseId, data) => axiosInstance.patch(`/course/edit/${courseId}`, data),
-  // Create a new lecture
+  // Create a new recorded lecture
   createLecture: (formData) => axiosInstance.post('/lecture/create', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })

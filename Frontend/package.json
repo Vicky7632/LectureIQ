@@ -11,10 +11,13 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@livekit/components-react": "^2.9.24",
+    "@livekit/components-styles": "^1.2.0",
     "@react-oauth/google": "^0.13.4",
     "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.13.5",
     "daisyui": "^5.5.18",
+    "livekit-client": "^2.22.4",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

@@ -69,6 +69,13 @@ test("mounts the live start and end routes at the frontend API paths", () => {
     { path: "/:lectureId/start", patch: true },
     { path: "/:lectureId/end", patch: true },
   ]);
+  assert.ok(
+    lectureRouter.stack.some(
+      (layer) =>
+        layer.route?.path === "/:lectureId/livekit-token" &&
+        layer.route.methods.get
+    )
+  );
 });
 
 test("starts a scheduled live lecture and persists the live state", async () => {

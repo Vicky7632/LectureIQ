@@ -28,8 +28,11 @@ const { initSocket } = require("./socket");
 const app = express();
 app.use(express.json());
 app.use(cors({
-    //* for everyonre in origin
-    origin:['http://localhost:5173','http://127.0.0.1:5173'],
+    origin: [
+      process.env.FRONTEND_URL,
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+    ].filter(Boolean),
     credentials:true
 }))
 app.use(cookieParser());
@@ -53,7 +56,8 @@ const initializeConnection = async () => {
     const server = http.createServer(app);
 
     // Socket init AFTER server is created
-    initSocket(server);
+    const io = initSocket(server);
+    app.set("io", io);
 
     server.listen(process.env.PORT, () => {
       console.log(`Server running on port ${process.env.PORT}`);
@@ -65,5 +69,3 @@ const initializeConnection = async () => {
 };
 
 initializeConnection();
-
-

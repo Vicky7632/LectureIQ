@@ -68,11 +68,6 @@ const AdminTeachers = () => {
     }
   }
 
-  const handleRejectTeacher = async () => {
-    // Optional: implement reject functionality if your backend supports it
-    toast.error('Reject functionality not implemented')
-  }
-
   const pendingCount = teachers.filter(t => !t.isEmailVerified).length
   const verifiedCount = teachers.filter(t => t.isEmailVerified).length
 
@@ -148,7 +143,6 @@ const AdminTeachers = () => {
               key={teacher._id}
               teacher={teacher}
               onVerify={handleVerifyTeacher}
-              onReject={handleRejectTeacher}
               isProcessing={processingId === teacher._id}
             />
           ))}

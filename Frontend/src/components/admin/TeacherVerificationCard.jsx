@@ -1,5 +1,5 @@
 import React from 'react'
-import { Mail, CheckCircle, XCircle, Calendar } from 'lucide-react'
+import { Mail, CheckCircle, Calendar } from 'lucide-react'
 
 import Card from '../common/Card'
 import Button from '../common/Button'
@@ -7,7 +7,6 @@ import Button from '../common/Button'
 const TeacherVerificationCard = ({ 
   teacher, 
   onVerify, 
-  onReject,
   isProcessing = false 
 }) => {
   return (
@@ -58,19 +57,6 @@ const TeacherVerificationCard = ({
               <CheckCircle size={16} className="mr-1" />
               Verify
             </Button>
-            {onReject && (
-              <Button
-                variant="error"
-                size="sm"
-                onClick={() => onReject(teacher._id)}
-                loading={isProcessing}
-                disabled={isProcessing}
-                className="flex-1 sm:flex-none"
-              >
-                <XCircle size={16} className="mr-1" />
-                Reject
-              </Button>
-            )}
           </div>
         )}
       </div>

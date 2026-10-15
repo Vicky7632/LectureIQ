@@ -46,7 +46,7 @@ const canJoinLiveLecture = ({
     return false;
   }
 
-  if (lecture?.lectureType !== "live" || lecture.liveStatus === "ended") {
+  if (lecture?.lectureType !== "live" || lecture.liveStatus !== "live") {
     return false;
   }
 
