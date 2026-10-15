@@ -93,6 +93,53 @@ test("starts a scheduled live lecture and persists the live state", async () => 
   assert.equal(lecture.saved, true);
 });
 
+test("emits lecture start and end events to the lecture and course rooms", async () => {
+  const lecture = createLecture({
+    _id: "507f1f77bcf86cd799439011",
+    course: "507f1f77bcf86cd799439022",
+    title: "React live session",
+  });
+  const events = {};
+  const io = {
+    to: (room) => ({
+      emit: (eventName, payload) => {
+        events[`${room}:${eventName}`] = payload;
+      },
+    }),
+  };
+  const req = {
+    ...requestFor(),
+    app: { get: (name) => (name === "io" ? io : undefined) },
+  };
+  const lectureRoomName = req.params.lectureId;
+
+  const startedResponse = await invokeController(startLiveLecture, lecture, req);
+  assert.equal(startedResponse.statusCode, 200);
+  assert.equal(
+    events[`${lectureRoomName}:lecture:started`]?.lectureId,
+    lecture._id.toString()
+  );
+  assert.equal(
+    events[`course:${lecture.course.toString()}:lecture:started`]?.courseId,
+    lecture.course.toString()
+  );
+
+  const endedResponse = await invokeController(
+    endLiveLecture,
+    { ...lecture, liveStatus: "live", startedAt: new Date() },
+    req
+  );
+  assert.equal(endedResponse.statusCode, 200);
+  assert.equal(
+    events[`${lectureRoomName}:lecture:ended`]?.lectureId,
+    lecture._id.toString()
+  );
+  assert.equal(
+    events[`course:${lecture.course.toString()}:lecture:ended`]?.courseId,
+    lecture.course.toString()
+  );
+});
+
 test("rejects starting a lecture that is not scheduled", async () => {
   const lecture = createLecture({ liveStatus: "live" });
   const response = await invokeController(

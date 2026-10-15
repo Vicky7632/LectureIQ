@@ -160,6 +160,24 @@ const startLiveLecture = async (req, res) => {
 
     await lecture.save();
 
+    const io = req.app?.get?.("io");
+    if (io) {
+      io.to(lectureId).emit("lecture:started", {
+        lectureId: lecture._id.toString(),
+        courseId: lecture.course.toString(),
+        title: lecture.title,
+        liveStatus: lecture.liveStatus,
+        startedAt: lecture.startedAt,
+      });
+      io.to(`course:${lecture.course.toString()}`).emit("lecture:started", {
+        lectureId: lecture._id.toString(),
+        courseId: lecture.course.toString(),
+        title: lecture.title,
+        liveStatus: lecture.liveStatus,
+        startedAt: lecture.startedAt,
+      });
+    }
+
     res.status(200).json({
       message: "Live session started",
       roomId: lecture.liveRoomId,
@@ -234,10 +252,23 @@ const endLiveLecture = async (req, res) => {
 
     await lecture.save();
 
-    req.app?.get?.("io")?.to(lectureId).emit("lecture:ended", {
-      lectureId,
-      endedAt: lecture.endedAt,
-    });
+    const io = req.app?.get?.("io");
+    if (io) {
+      io.to(lectureId).emit("lecture:ended", {
+        lectureId: lecture._id.toString(),
+        courseId: lecture.course.toString(),
+        title: lecture.title,
+        liveStatus: lecture.liveStatus,
+        endedAt: lecture.endedAt,
+      });
+      io.to(`course:${lecture.course.toString()}`).emit("lecture:ended", {
+        lectureId: lecture._id.toString(),
+        courseId: lecture.course.toString(),
+        title: lecture.title,
+        liveStatus: lecture.liveStatus,
+        endedAt: lecture.endedAt,
+      });
+    }
 
     res.status(200).json({
       message: "Live session ended and saved successfully",

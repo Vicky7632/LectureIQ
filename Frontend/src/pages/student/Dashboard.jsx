@@ -1,12 +1,28 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
 import { BookOpen, Users, Clock, TrendingUp, PlayCircle, ChevronRight, Calendar } from 'lucide-react'
 import { courseApi } from '../../api/courseApi'
+import { enrollmentApi } from '../../api/enrollmentApi'
+import { liveApi } from '../../api/liveApi'
+import { useSocket } from '../../contexts/socketContextHooks'
+
+const formatLiveTime = (value) => {
+  if (!value) return 'Scheduled'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Scheduled'
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date)
+}
 
 const StudentDashboard = () => {
   const { user } = useSelector((state) => state.auth)
+  const socket = useSocket()
   const [courses, setCourses] = useState([])
+  const [liveSessions, setLiveSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     enrolledCourses: 0,
@@ -14,6 +30,107 @@ const StudentDashboard = () => {
     totalHours: 0,
     progress: 0
   })
+  const subscribedCoursesRef = useRef(new Set())
+  const notifiedLectureIdsRef = useRef(new Set())
+
+  const refreshLiveSessions = async () => {
+    try {
+      const enrollRes = await enrollmentApi.getMyEnrollments();
+      const enrollments = (enrollRes.data.enrollments || []).filter(
+        (enrollment) => enrollment.status === 'active'
+      )
+      const courseIds = enrollments
+        .map((enrollment) => enrollment.course?._id)
+        .filter(Boolean)
+
+      const results = await Promise.allSettled(
+        courseIds.map((courseId) => liveApi.getUpcoming(courseId))
+      )
+
+      const sessions = results.flatMap((result) =>
+        result.status === 'fulfilled' ? result.value.data.sessions || [] : []
+      )
+
+      setLiveSessions(sessions)
+
+      if (socket) {
+        const nextSubscribed = new Set(courseIds)
+        for (const courseId of nextSubscribed) {
+          if (!subscribedCoursesRef.current.has(courseId)) {
+            socket.emit('course:subscribe', { courseId }, (response) => {
+              if (!response?.ok) {
+                console.warn('Failed to subscribe to course live updates:', response?.error)
+              }
+            })
+          }
+        }
+        for (const courseId of subscribedCoursesRef.current) {
+          if (!nextSubscribed.has(courseId)) {
+            socket.emit('course:unsubscribe', { courseId })
+          }
+        }
+        subscribedCoursesRef.current = nextSubscribed
+      }
+    } catch (error) {
+      console.error('Failed to fetch live sessions:', error)
+      toast.error('Unable to load live classrooms right now')
+    }
+  }
+
+  useEffect(() => {
+    if (!socket) return undefined
+
+    const updateSessionState = (payload) => {
+      if (!payload?.lectureId) return
+
+      setLiveSessions((previous) => {
+        const existingIndex = previous.findIndex((session) => session._id === payload.lectureId)
+        if (existingIndex >= 0) {
+          return previous.map((session) =>
+            session._id === payload.lectureId
+              ? { ...session, ...payload, liveStatus: payload.liveStatus || session.liveStatus }
+              : session
+          )
+        }
+
+        return [
+          {
+            _id: payload.lectureId,
+            title: payload.title || 'Live class',
+            description: payload.description || '',
+            liveStatus: payload.liveStatus || 'live',
+            createdAt: payload.startedAt || payload.endedAt || new Date().toISOString(),
+            course: payload.courseId,
+          },
+          ...previous,
+        ]
+      })
+
+      if (payload.liveStatus === 'live' && !notifiedLectureIdsRef.current.has(payload.lectureId)) {
+        notifiedLectureIdsRef.current.add(payload.lectureId)
+        toast.success(`A live class is now starting: ${payload.title || 'Live class'}`)
+      }
+      if (payload.liveStatus === 'ended') {
+        notifiedLectureIdsRef.current.add(payload.lectureId)
+      }
+    }
+
+    const handleStarted = (payload) => updateSessionState({ ...payload, liveStatus: 'live' })
+    const handleEnded = (payload) => updateSessionState({ ...payload, liveStatus: 'ended' })
+    const handleConnect = () => {
+      void refreshLiveSessions()
+    }
+
+    socket.on('lecture:started', handleStarted)
+    socket.on('lecture:ended', handleEnded)
+    socket.on('connect', handleConnect)
+
+    return () => {
+      socket.off('lecture:started', handleStarted)
+      socket.off('lecture:ended', handleEnded)
+      socket.off('connect', handleConnect)
+    }
+  }, [socket])
 
   useEffect(() => {
     fetchDashboardData()
@@ -23,12 +140,12 @@ const StudentDashboard = () => {
     try {
       setLoading(true)
       const [coursesRes] = await Promise.all([
-        courseApi.getPublishedCourses()
+        courseApi.getPublishedCourses(),
+        refreshLiveSessions(),
       ])
 
       setCourses(coursesRes.data.courses.slice(0, 4))
 
-      // Mock stats - you would get these from your backend
       setStats({
         enrolledCourses: 5,
         completedLectures: 12,
@@ -44,7 +161,6 @@ const StudentDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
       <div className="dashboard-banner rounded-2xl p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
@@ -57,7 +173,6 @@ const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="card bg-base-100 shadow hover:shadow-lg transition-shadow">
           <div className="card-body">
@@ -120,9 +235,65 @@ const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* Recent Courses & Continue Learning */}
+      <div className="card bg-base-100 shadow">
+        <div className="card-body">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="card-title">Live & Upcoming Classes</h2>
+            <Link to="/student/upcoming-live" className="link link-primary text-sm">
+              View all
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <span className="loading loading-spinner loading-lg"></span>
+            </div>
+          ) : liveSessions.length === 0 ? (
+            <p className="text-gray-500">No live or upcoming classes right now.</p>
+          ) : (
+            <div className="space-y-3">
+              {liveSessions.map((session) => {
+                const isLive = session.liveStatus === 'live'
+                return (
+                  <div key={session._id} className="rounded-xl border border-base-300 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className={`badge ${isLive ? 'badge-success' : 'badge-ghost'}`}>
+                            {isLive ? 'Live now' : 'Upcoming'}
+                          </span>
+                          <span className="text-xs text-gray-500">{session.course ? 'Course session' : 'Live classroom'}</span>
+                        </div>
+                        <h3 className="font-semibold">{session.title}</h3>
+                        <p className="text-sm text-gray-500">
+                          {session.description || 'Live classroom session'}
+                        </p>
+                        <p className="mt-2 text-sm text-gray-600">
+                          {isLive ? 'Started' : 'Scheduled'}: {formatLiveTime(session.startedAt || session.createdAt || session.scheduledAt)}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {isLive ? (
+                          <Link to={`/live/${session._id}`} className="btn btn-primary btn-sm">
+                            Join now
+                          </Link>
+                        ) : (
+                          <button type="button" className="btn btn-outline btn-sm" disabled>
+                            Upcoming
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recommended Courses */}
         <div className="card bg-base-100 shadow">
           <div className="card-body">
             <div className="flex justify-between items-center mb-4">
@@ -161,7 +332,6 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
         <div className="card bg-base-100 shadow">
           <div className="card-body">
             <h2 className="card-title">Quick Actions</h2>
@@ -184,7 +354,6 @@ const StudentDashboard = () => {
               </Link>
             </div>
 
-            {/* Upcoming Deadlines */}
             <div className="mt-8">
               <h3 className="font-semibold mb-4">Upcoming Deadlines</h3>
               <div className="space-y-3">

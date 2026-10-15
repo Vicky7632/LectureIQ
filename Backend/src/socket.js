@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken");
 const socketIO = require("socket.io");
 const { randomUUID } = require("crypto");
 const Student = require("./models/student");
+const Course = require("./models/course");
+const Enrollment = require("./models/enrollment");
 const redisClient = require("./config/redis");
 const {
   isValidLectureId,
@@ -9,6 +11,39 @@ const {
   parseChatMessage,
 } = require("./utils/liveSocketAccess");
 const { loadAuthorizedLiveLecture } = require("./services/liveLectureAccess");
+
+const getCourseRoomName = (courseId) => `course:${courseId.toString()}`;
+
+const canSubscribeToCourse = async (user, courseId) => {
+  if (!isValidLectureId(courseId)) {
+    return { ok: false, error: "A valid courseId is required" };
+  }
+
+  if (!user?.isEmailVerified || !user?.isActive) {
+    return { ok: false, error: "An active, verified account is required" };
+  }
+
+  if (user.role !== "student") {
+    return { ok: false, error: "Student access only" };
+  }
+
+  const course = await Course.findById(courseId).select("_id status");
+  if (!course || course.status !== "published") {
+    return { ok: false, error: "Course access denied" };
+  }
+
+  const enrollment = await Enrollment.findOne({
+    student: user._id,
+    course: course._id,
+    status: "active",
+  }).select("_id");
+
+  if (!enrollment) {
+    return { ok: false, error: "Course access denied" };
+  }
+
+  return { ok: true, course };
+};
 
 const getCookieToken = (cookieHeader) => {
   if (typeof cookieHeader !== "string") {
@@ -92,6 +127,37 @@ const initSocket = (server) => {
 
   io.on("connection", (socket) => {
     const user = socket.data.user;
+
+    socket.on("course:subscribe", async (payload, callback) => {
+      const courseId = payload?.courseId;
+      try {
+        const access = await canSubscribeToCourse(user, courseId);
+        if (!access.ok) {
+          acknowledge(callback, { ok: false, error: access.error });
+          return;
+        }
+
+        await socket.join(getCourseRoomName(courseId));
+        acknowledge(callback, { ok: true, courseId });
+      } catch (error) {
+        console.error("Socket course subscribe failed:", error);
+        acknowledge(callback, {
+          ok: false,
+          error: "Unable to subscribe to course updates",
+        });
+      }
+    });
+
+    socket.on("course:unsubscribe", async (payload, callback) => {
+      const courseId = payload?.courseId;
+      if (!isValidLectureId(courseId)) {
+        acknowledge(callback, { ok: false, error: "A valid courseId is required" });
+        return;
+      }
+
+      await socket.leave(getCourseRoomName(courseId));
+      acknowledge(callback, { ok: true, courseId });
+    });
 
     socket.on("lecture:join", async (payload, callback) => {
       const lectureId = payload?.lectureId;
@@ -187,4 +253,4 @@ const initSocket = (server) => {
   return io;
 };
 
-module.exports = { initSocket };
+module.exports = { authenticateSocket, initSocket };
