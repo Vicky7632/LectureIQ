@@ -60,8 +60,11 @@ const getMyEnrollments = async (req, res) => {
       return res.status(403).json({ message: "Student access only" });
     }
 
-    const enrollments = await Enrollment.find({ student: req.student._id })
-      .populate('course', 'title thumbnail');
+    const enrollments = await Enrollment.find({ student: req.student._id }).populate({
+      path: "course",
+      select: "title thumbnail status teacher",
+      populate: { path: "teacher", select: "firstName lastName" },
+    });
     return res.status(200).json({ enrollments });
   } catch (err) {
     console.error("GetMyEnrollmentsError:", err);

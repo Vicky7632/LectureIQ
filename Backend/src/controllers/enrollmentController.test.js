@@ -183,6 +183,59 @@ test("a fresh enrollment-status request returns the persisted active enrollment"
   }
 });
 
+test("returns only the authenticated student's enrollments and keeps all enrollment statuses", async () => {
+  const originalFind = Enrollment.find;
+  const ownEnrollments = [
+    createEnrollment({ status: "active" }),
+    createEnrollment({ _id: "pending-enrollment", status: "pending" }),
+    createEnrollment({ _id: "cancelled-enrollment", status: "cancelled" }),
+    createEnrollment({ _id: "expired-enrollment", status: "expired" }),
+  ];
+  const allEnrollments = [
+    ...ownEnrollments,
+    createEnrollment({
+      _id: "other-student-enrollment",
+      student: "507f1f77bcf86cd799439099",
+    }),
+  ];
+  let query;
+  let populateOptions;
+  Enrollment.find = (filter) => {
+    query = filter;
+    return {
+      populate: async (options) => {
+        populateOptions = options;
+        return allEnrollments.filter(
+          (enrollment) => String(enrollment.student) === String(filter.student)
+        );
+      },
+    };
+  };
+
+  try {
+    const req = {
+      student: { _id: studentId, role: "student" },
+      params: { studentId: "507f1f77bcf86cd799439099" },
+      query: { studentId: "507f1f77bcf86cd799439099" },
+    };
+    const res = createResponse();
+    await getMyEnrollments(req, res);
+
+    assert.deepEqual(query, { student: studentId });
+    assert.deepEqual(
+      res.body.enrollments.map((enrollment) => enrollment.status),
+      ["active", "pending", "cancelled", "expired"]
+    );
+    assert.deepEqual(populateOptions, {
+      path: "course",
+      select: "title thumbnail status teacher",
+      populate: { path: "teacher", select: "firstName lastName" },
+    });
+  } finally {
+    Enrollment.find = originalFind;
+  }
+});
+
 test("rejects enrollment-status requests from non-students", async () => {
   const originalFind = Enrollment.find;
   Enrollment.find = () => {
