@@ -229,7 +229,7 @@ const CourseDetail = () => {
                 <div className="flex flex-wrap gap-6 mb-6">
                   <div className="flex items-center gap-2">
                     <Users size={20} />
-                    <span>{course.enrolledStudents?.length || 0} students enrolled</span>
+                    <span>{course.enrollmentCount ?? course.enrolledStudents?.length ?? 0} students enrolled</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <BookOpen size={20} />

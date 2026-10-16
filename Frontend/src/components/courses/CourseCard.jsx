@@ -20,7 +20,7 @@ const CourseCard = ({ course }) => {
         <div className="mt-2 flex items-center gap-4 text-sm text-base-content/60">
           <div className="flex items-center gap-1">
             <Users size={16} />
-            <span>{course.enrolledStudents?.length || 0}</span>
+            <span>{course.enrollmentCount ?? course.enrolledStudents?.length ?? 0}</span>
           </div>
           <div className="flex items-center gap-1">
             <Clock size={16} />

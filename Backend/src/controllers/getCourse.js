@@ -3,19 +3,59 @@ const Lecture = require("../models/lecture");
 const Student = require("../models/student");
 
 const Enrollment = require("../models/enrollment");
+const publicCourseFields =
+    "_id title description category level price isPaid thumbnail teacher lecturesCount totalDuration";
+const toPublicCourse = (course) => {
+    const data = course.toObject();
+    const {
+        _id,
+        title,
+        description,
+        category,
+        level,
+        price,
+        isPaid,
+        thumbnail,
+        teacher,
+        lecturesCount,
+        totalDuration,
+    } = data;
+    return {
+        _id,
+        title,
+        description,
+        category,
+        level,
+        price,
+        isPaid,
+        thumbnail,
+        teacher,
+        lecturesCount,
+        totalDuration,
+    };
+};
 
 const getPublishedCourses = async (req, res) => {
     try {
         const courses = await Course.find({
             status: "published",
         })
-            .select(
-                "title description category level price isPaid thumbnail teacher lecturesCount totalDuration"
-            )
+            .select(publicCourseFields)
             .populate("teacher", "firstName lastName");
+        const enrollmentCounts = await Enrollment.aggregate([
+            { $match: { status: "active" } },
+            { $group: { _id: "$course", count: { $sum: 1 } } },
+        ]);
+        const countsByCourse = new Map(
+            enrollmentCounts.map(({ _id, count }) => [String(_id), count])
+        );
 
         return res.status(200).json({
-            courses,
+            courses: courses.map((course) => {
+                const result = toPublicCourse(course);
+                result.enrollmentCount = countsByCourse.get(String(course._id)) || 0;
+                return result;
+            }),
         });
     } catch (err) {
         console.error("GetCoursesError:", err);
@@ -31,7 +71,9 @@ const getCourseById = async (req, res) => {
         const course = await Course.findOne({
             _id: courseId,
             status: "published",
-        }).populate("teacher", "firstName lastName");
+        })
+            .select(publicCourseFields)
+            .populate("teacher", "firstName lastName");
 
         if (!course) {
             return res.status(404).json({ message: "Course not found" });
@@ -59,7 +101,12 @@ const getCourseById = async (req, res) => {
                 },
             });
         }
-  return res.status(200).json({ course })
+        const courseData = toPublicCourse(course);
+        courseData.enrollmentCount = await Enrollment.countDocuments({
+            course: courseId,
+            status: "active",
+        });
+        return res.status(200).json({ course: courseData });
 
     } catch (err) {
         console.error("GetCourseByIdError:", err);

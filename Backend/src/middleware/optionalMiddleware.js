@@ -14,7 +14,7 @@ const optionalStudent = async (req, res, next) => {
     if (isBlocked) return next();
 
     const student = await Student.findById(payload._id);
-    if (!student) return next();
+    if (!student || !student.isEmailVerified || !student.isActive) return next();
 
     req.student = student; // silently attach
     next();

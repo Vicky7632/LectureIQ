@@ -2,6 +2,12 @@ const Student = require("../models/student");
 const Course = require("../models/course");
 const Payment = require("../models/payment");
 const Enrollment = require("../models/enrollment");
+const stripPaymentInternals = (payment) => {
+  const data = payment.toObject ? payment.toObject() : { ...payment };
+  delete data.providerSignature;
+  delete data.meta;
+  return data;
+};
 
 const getAllTeachers = async (req, res) => {
   try {
@@ -43,12 +49,20 @@ const getAllStudents = async (req, res) => {
 const getAllPayments = async (req, res) => {
   try {
     const payments = await Payment.find()
+      .select(
+        "_id student course enrollment amount currency status paymentProvider providerOrderId providerPaymentId createdAt updatedAt"
+      )
       .populate("student", "firstName lastName email")
       .populate("course", "title price")
-      .populate("enrollment")
+      .populate(
+        "enrollment",
+        "_id student course status paymentStatus enrolledAt expiresAt"
+      )
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ payments });
+    return res.status(200).json({
+      payments: payments.map(stripPaymentInternals),
+    });
   } catch (err) {
     console.error("GetAllPaymentsError:", err);
     return res.status(500).json({ message: "Internal server error" });
@@ -73,6 +87,9 @@ const getCoursePayments = async (req, res) => {
     const { courseId } = req.params;
 
     const payments = await Payment.find({ course: courseId })
+      .select(
+        "_id student course enrollment amount currency status paymentProvider providerOrderId providerPaymentId createdAt updatedAt"
+      )
       .populate("student", "firstName lastName email");
 
     const totalRevenue = payments.reduce(
@@ -83,7 +100,7 @@ const getCoursePayments = async (req, res) => {
     return res.status(200).json({
       totalRevenue,
       totalPayments: payments.length,
-      payments,
+      payments: payments.map(stripPaymentInternals),
     });
   } catch (err) {
     console.error("GetCoursePaymentsError:", err);
