@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { Menu, Bell, Search, User, LogOut, BookOpen } from 'lucide-react'
 import { logout } from '../../store/slices/authSlice'
+import { getRoleNavigationLinks } from './navigationLinks'
 
 const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const dispatch = useDispatch()
@@ -77,21 +78,13 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                 </li>
                 <li><Link to={getDashboardLink()}>Dashboard</Link></li>
                 <li><Link to="/profile">Profile</Link></li>
-                <li><Link to="/settings">Settings</Link></li>
+                <li><Link to="/change-password">Change Password</Link></li>
                 <div className="divider my-1" />
-                {role === 'teacher' && (
-                  <>
-                    <li><Link to="/teacher/courses">My Courses</Link></li>
-                    <li><Link to="/teacher/create-course">Create Course</Link></li>
-                  </>
-                )}
-                {role === 'admin' && (
-                  <>
-                    <li><Link to="/admin/teachers">Teachers</Link></li>
-                    <li><Link to="/admin/courses">Courses</Link></li>
-                    <li><Link to="/admin/approvals">Approvals</Link></li>
-                  </>
-                )}
+                {getRoleNavigationLinks(role)
+                  .filter(({ label }) => !['Dashboard', 'Profile', 'Change Password'].includes(label))
+                  .map(({ to, label }) => (
+                    <li key={to}><Link to={to}>{label}</Link></li>
+                  ))}
                 <div className="divider my-1" />
                 <li>
                   <button onClick={handleLogout} className="text-error">

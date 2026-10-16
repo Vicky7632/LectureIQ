@@ -1,55 +1,11 @@
 import React from 'react'
 import { useSelector } from 'react-redux'
 import { NavLink } from 'react-router-dom'
-import {
-  Home,
-  BookOpen,
-  Users,
-  DollarSign,
-  CheckCircle,
-  PlusCircle,
-  BarChart,
-  Settings,
-  X,
-  UserPlus,
-  Shield
-} from 'lucide-react'
+import { X } from 'lucide-react'
+import { getRoleNavigationLinks } from './navigationLinks'
 
 const Sidebar = ({ isOpen, setSidebarOpen }) => {   // 👈 prop aaya
   const { role } = useSelector((state) => state.auth)
-
-  const studentLinks = [
-    { to: '/student/dashboard', icon: Home, label: 'Dashboard' },
-    { to: '/student/my-courses', icon: BookOpen, label: 'My Courses' },
-    { to: '/courses', icon: BookOpen, label: 'Browse Courses' },
-    { to: '/profile', icon: Settings, label: 'Profile' },
-  ]
-
-  const teacherLinks = [
-    { to: '/teacher/dashboard', icon: Home, label: 'Dashboard' },
-    { to: '/teacher/courses', icon: BookOpen, label: 'My Courses' },
-    { to: '/teacher/create-course', icon: PlusCircle, label: 'Create Course' },
-    { to: '/teacher/analytics', icon: BarChart, label: 'Analytics' },
-    { to: '/profile', icon: Settings, label: 'Profile' },
-  ]
-
-  const adminLinks = [
-    { to: '/admin/dashboard', icon: Home, label: 'Dashboard' },
-    { to: '/admin/teachers', icon: Users, label: 'Teachers' },
-    { to: '/admin/create-teacher', icon: UserPlus, label: 'Add Teacher' },
-    { to: '/admin/courses', icon: BookOpen, label: 'Courses' },
-    { to: '/admin/students', icon: Users, label: 'Students' },
-    { to: '/admin/approvals', icon: CheckCircle, label: 'Approvals' },
-    { to: '/admin/payments', icon: DollarSign, label: 'Payments' },
-    { to: '/admin/create-admin', icon: Shield, label: 'Add Admin' },
-    { to: '/profile', icon: Settings, label: 'Profile' },
-  ]
-
-  const getLinks = () => {
-    if (role === 'admin') return adminLinks
-    if (role === 'teacher') return teacherLinks
-    return studentLinks
-  }
 
   const closeSidebar = () => setSidebarOpen(false)
 
@@ -90,7 +46,7 @@ const Sidebar = ({ isOpen, setSidebarOpen }) => {   // 👈 prop aaya
             Workspace
           </p>
           <ul className="menu w-full gap-1 p-0">
-            {getLinks().map((link) => (
+            {getRoleNavigationLinks(role).map((link) => (
               <li key={link.to}>
                 <NavLink
                   to={link.to}
@@ -100,7 +56,7 @@ const Sidebar = ({ isOpen, setSidebarOpen }) => {   // 👈 prop aaya
                       ? 'active border border-primary/10 bg-primary/10 font-semibold text-primary'
                       : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
                   }
-                  end={link.to === '/student/dashboard' || link.to === '/teacher/dashboard' || link.to === '/admin/dashboard'}
+                  end={link.label === 'Dashboard'}
                 >
                   <link.icon size={18} />
                   {link.label}

@@ -254,9 +254,9 @@ const TeacherDashboard = () => {
                 <Users className="w-5 h-5 mr-2" />
                 View Students
               </Link>
-              <Link to="/teacher/analytics" className="btn btn-outline w-full justify-start">
+              <Link to="/teacher/courses" className="btn btn-outline w-full justify-start">
                 <TrendingUp className="w-5 h-5 mr-2" />
-                View Analytics
+                Manage Courses
               </Link> */}
             </div>
 

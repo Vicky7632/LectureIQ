@@ -293,7 +293,12 @@ const StudentDashboard = () => {
                           {session.description || 'Live classroom session'}
                         </p>
                         <p className="mt-2 text-sm text-gray-600">
-                          {isLive ? 'Started' : 'Scheduled'}: {formatLiveTime(session.startedAt || session.createdAt || session.scheduledAt)}
+                          {isLive ? 'Started' : 'Scheduled'}:{' '}
+                          {formatLiveTime(
+                            isLive
+                              ? session.startedAt || session.scheduledAt
+                              : session.scheduledAt || session.createdAt
+                          )}
                         </p>
                       </div>
 
@@ -368,7 +373,7 @@ const StudentDashboard = () => {
                 <Calendar className="w-5 h-5 mr-2" />
                 Upcoming Live Sessions
               </Link>
-              <Link to="/my-courses" className="btn btn-outline w-full justify-start">
+              <Link to="/student/my-courses" className="btn btn-outline w-full justify-start">
                 <PlayCircle className="w-5 h-5 mr-2" />
                 My Learning Path
               </Link>

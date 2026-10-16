@@ -45,7 +45,7 @@ const CreateAdmin = () => {
         role: 'admin'
       })
       toast.success('Admin registered successfully')
-      navigate('/admin/admins')
+      navigate('/admin/dashboard')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed')
     } finally {
@@ -215,7 +215,7 @@ const CreateAdmin = () => {
             <div className="flex w-full flex-col-reverse gap-3 border-t border-base-200 pt-4 sm:flex-row sm:justify-end">
               <button 
                 type="button" 
-                onClick={() => navigate('/admin/admins')} 
+                onClick={() => navigate('/admin/dashboard')}
                 className="btn btn-ghost w-full sm:w-auto"
                 disabled={loading}
               >
