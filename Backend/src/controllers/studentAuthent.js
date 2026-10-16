@@ -2,6 +2,7 @@ const Student=require('../models/student');
 const validate=require('../utils/validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require("crypto");
 const redisClient=require('../config/redis');
 const validator=require('validator');
 const nodemailer = require("nodemailer");
@@ -267,8 +268,30 @@ const resetPassword=async (req,res)=>{
     }
     //hashed the password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    student.password = hashedPassword;
-    await student.save();
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const updatedStudent = await Student.findOneAndUpdate(
+      {
+        _id,
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: { $gt: new Date() },
+      },
+      {
+        $set: {
+          password: hashedPassword,
+          passwordChangedAt: new Date(),
+        },
+        $unset: {
+          passwordResetTokenHash: 1,
+          passwordResetExpiresAt: 1,
+        },
+      },
+      { new: true }
+    );
+    if (!updatedStudent) {
+      return res.status(401).json({
+        message: "Invalid or expired reset token",
+      });
+    }
     
       //  success response
     return res.status(200).json({
@@ -301,7 +324,12 @@ try{
       process.env.JWT_KEY,
       { expiresIn: "10m" }
     );
-    console.log("RESET PASSWORD TOKEN:", token)
+    student.passwordResetTokenHash = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+    student.passwordResetExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await student.save();
     //email preparation
     const transporter = nodemailer.createTransport({
        service: "gmail",
@@ -332,7 +360,7 @@ try{
     });
 }
 catch(err){
-    console.error("ForgotPasswordError:", err);
+    console.error("ForgotPasswordError");
     return res.status(500).json({ message: "Internal server error" });
 }
 }

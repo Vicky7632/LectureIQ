@@ -68,6 +68,16 @@ const studentSchema=new Schema({
       type: Date,
     },
 
+    passwordResetTokenHash: {
+      type: String,
+      select: false,
+    },
+
+    passwordResetExpiresAt: {
+      type: Date,
+      select: false,
+    },
+
     loginAttempts: {
       type: Number,
       default: 0,
@@ -142,4 +152,3 @@ module.exports=Student;
 
 
    
-
