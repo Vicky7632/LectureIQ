@@ -236,6 +236,45 @@ test("public course listing uses a field allowlist and returns counts, not enrol
   assert.deepEqual(query, { status: "published" });
 });
 
+test("published course search trims the query, escapes regex input, and stays publication-scoped", async () => {
+  let query;
+  Course.find = (filter) => {
+    query = filter;
+    return queryResult([], () => {});
+  };
+  Enrollment.aggregate = async () => [];
+  const response = createResponse();
+
+  await getPublishedCourses({ query: { q: "  C++ (Basics)  " } }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(query, {
+    status: "published",
+    $or: [
+      { title: /C\+\+ \(Basics\)/i },
+      { description: /C\+\+ \(Basics\)/i },
+      { category: /C\+\+ \(Basics\)/i },
+      { level: /C\+\+ \(Basics\)/i },
+    ],
+  });
+});
+
+test("empty published-course search returns all published courses without a search filter", async () => {
+  let query;
+  Course.find = (filter) => {
+    query = filter;
+    return queryResult([], () => {});
+  };
+  Enrollment.aggregate = async () => [];
+  const response = createResponse();
+
+  await getPublishedCourses({ query: { q: "   " } }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.body.courses, []);
+  assert.deepEqual(query, { status: "published" });
+});
+
 test("optional authentication does not treat inactive or unverified users as enrolled identities", async () => {
   const token = jwt.sign({ _id: "student-1" }, jwtKey);
   for (const user of [

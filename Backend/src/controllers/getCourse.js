@@ -5,6 +5,7 @@ const Student = require("../models/student");
 const Enrollment = require("../models/enrollment");
 const publicCourseFields =
     "_id title description category level price isPaid thumbnail teacher lecturesCount totalDuration";
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const toPublicCourse = (course) => {
     const data = course.toObject();
     const {
@@ -37,9 +38,20 @@ const toPublicCourse = (course) => {
 
 const getPublishedCourses = async (req, res) => {
     try {
-        const courses = await Course.find({
-            status: "published",
-        })
+        const searchTerm =
+            typeof req.query?.q === "string" ? req.query.q.trim() : "";
+        const courseFilter = { status: "published" };
+        if (searchTerm) {
+            const searchPattern = new RegExp(escapeRegex(searchTerm), "i");
+            courseFilter.$or = [
+                { title: searchPattern },
+                { description: searchPattern },
+                { category: searchPattern },
+                { level: searchPattern },
+            ];
+        }
+
+        const courses = await Course.find(courseFilter)
             .select(publicCourseFields)
             .populate("teacher", "firstName lastName");
         const enrollmentCounts = await Enrollment.aggregate([

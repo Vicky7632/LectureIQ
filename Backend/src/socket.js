@@ -22,13 +22,27 @@ const canSubscribeToCourse = async (user, courseId) => {
   if (!user?.isEmailVerified || !user?.isActive) {
     return { ok: false, error: "An active, verified account is required" };
   }
-
-  if (user.role !== "student") {
-    return { ok: false, error: "Student access only" };
+  if (!["student", "teacher", "admin"].includes(user.role)) {
+    return { ok: false, error: "Course access denied" };
   }
 
-  const course = await Course.findById(courseId).select("_id status");
-  if (!course || course.status !== "published") {
+  const course = await Course.findById(courseId).select("_id status teacher");
+  if (!course) {
+    return { ok: false, error: "Course access denied" };
+  }
+
+  if (user.role === "teacher") {
+    if (course.teacher.toString() !== user._id.toString()) {
+      return { ok: false, error: "Course access denied" };
+    }
+    return { ok: true, course };
+  }
+
+  if (user.role === "admin") {
+    return { ok: true, course };
+  }
+
+  if (user.role !== "student" || course.status !== "published") {
     return { ok: false, error: "Course access denied" };
   }
 

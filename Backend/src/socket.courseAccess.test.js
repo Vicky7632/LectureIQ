@@ -37,6 +37,18 @@ const student = (overrides = {}) => ({
   isActive: true,
   ...overrides,
 });
+const teacher = (overrides = {}) => ({
+  ...student(),
+  _id: "teacher-1",
+  role: "teacher",
+  ...overrides,
+});
+const admin = (overrides = {}) => ({
+  ...student(),
+  _id: "admin-1",
+  role: "admin",
+  ...overrides,
+});
 
 test("allows an active enrolled student to subscribe to a published course room", async () => {
   await withAccessMocks(
@@ -104,7 +116,7 @@ test("rejects unauthorized roles, inactive accounts, and invalid course IDs", as
     },
     async () => {
       assert.equal(
-        (await canSubscribeToCourse(student({ role: "teacher" }), courseId)).ok,
+        (await canSubscribeToCourse(student({ role: "other" }), courseId)).ok,
         false
       );
       assert.equal(
@@ -124,6 +136,41 @@ test("rejects unauthorized roles, inactive accounts, and invalid course IDs", as
         (await canSubscribeToCourse(student(), "not-a-course-id")).ok,
         false
       );
+    }
+  );
+});
+
+test("allows a teacher to subscribe only to their own course room", async () => {
+  await withAccessMocks(
+    { course: { _id: courseId, status: "draft", teacher: "teacher-1" } },
+    async () => {
+      const access = await canSubscribeToCourse(teacher(), courseId);
+      assert.equal(access.ok, true);
+    }
+  );
+
+  await withAccessMocks(
+    {
+      course: {
+        _id: courseId,
+        status: "published",
+        teacher: "different-teacher",
+      },
+    },
+    async () => {
+      const denied = await canSubscribeToCourse(teacher(), courseId);
+      assert.equal(denied.ok, false);
+      assert.equal(denied.error, "Course access denied");
+    }
+  );
+});
+
+test("allows an active admin to subscribe to an existing course room", async () => {
+  await withAccessMocks(
+    { course: { _id: courseId, status: "draft", teacher: "teacher-1" } },
+    async () => {
+      const access = await canSubscribeToCourse(admin(), courseId);
+      assert.equal(access.ok, true);
     }
   );
 });

@@ -2,7 +2,9 @@ import axiosInstance from './axiosConfig'
 
 export const courseApi = {
   // Student endpoints
-  getPublishedCourses: () => axiosInstance.get('/user/courses'),
+  getPublishedCourses: (searchTerm = '') => axiosInstance.get('/user/courses', {
+    params: searchTerm ? { q: searchTerm } : {},
+  }),
   getCourseById: (courseId) => axiosInstance.get(`/user/course/${courseId}`),
   getCourseLectures: (courseId) => axiosInstance.get(`/user/course/${courseId}/lectures`),
   
