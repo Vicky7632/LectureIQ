@@ -19,6 +19,17 @@ const getTeacherCourses = async (req, res) => {
 const getCourseStudents = async (req, res) => {
     try {
         const { courseId } = req.params;
+        const course = await Course.findOne({
+            _id: courseId,
+            teacher: req.user._id,
+        });
+
+        if (!course) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied: Not your course",
+            });
+        }
 
         const students = await Enrollment.find({ course: courseId })
             .populate("student", "firstName lastName email")
