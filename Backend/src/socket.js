@@ -253,4 +253,4 @@ const initSocket = (server) => {
   return io;
 };
 
-module.exports = { authenticateSocket, initSocket };
+module.exports = { authenticateSocket, canSubscribeToCourse, initSocket };

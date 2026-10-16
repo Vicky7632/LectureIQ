@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
@@ -7,6 +7,11 @@ import { courseApi } from '../../api/courseApi'
 import { enrollmentApi } from '../../api/enrollmentApi'
 import { liveApi } from '../../api/liveApi'
 import { useSocket } from '../../contexts/socketContextHooks'
+import {
+  mergeLiveSessionSnapshot,
+  notifyLiveLectureOnce,
+  syncCourseSubscriptions,
+} from '../../contexts/socketClientConfig'
 
 const formatLiveTime = (value) => {
   if (!value) return 'Scheduled'
@@ -31,9 +36,18 @@ const StudentDashboard = () => {
     progress: 0
   })
   const subscribedCoursesRef = useRef(new Set())
+  const subscriptionAttemptsRef = useRef(new Map())
   const notifiedLectureIdsRef = useRef(new Set())
+  const knownLiveStatusesRef = useRef(new Map())
+  const liveSnapshotInitializedRef = useRef(false)
 
-  const refreshLiveSessions = async () => {
+  const notifyLectureStarted = useCallback((session) => {
+    notifyLiveLectureOnce(session, notifiedLectureIdsRef.current, (lecture) => {
+      toast.success(`A live class is now starting: ${lecture.title || 'Live class'}`)
+    })
+  }, [])
+
+  const refreshLiveSessions = useCallback(async () => {
     try {
       const enrollRes = await enrollmentApi.getMyEnrollments();
       const enrollments = (enrollRes.data.enrollments || []).filter(
@@ -51,43 +65,51 @@ const StudentDashboard = () => {
         result.status === 'fulfilled' ? result.value.data.sessions || [] : []
       )
 
-      setLiveSessions(sessions)
+      setLiveSessions(
+        mergeLiveSessionSnapshot(
+          sessions,
+          knownLiveStatusesRef.current,
+          (session) => {
+            if (liveSnapshotInitializedRef.current) {
+              notifyLectureStarted(session)
+            }
+          }
+        )
+      )
+      liveSnapshotInitializedRef.current = true
 
-      if (socket) {
-        const nextSubscribed = new Set(courseIds)
-        for (const courseId of nextSubscribed) {
-          if (!subscribedCoursesRef.current.has(courseId)) {
-            socket.emit('course:subscribe', { courseId }, (response) => {
-              if (!response?.ok) {
-                console.warn('Failed to subscribe to course live updates:', response?.error)
-              }
-            })
-          }
-        }
-        for (const courseId of subscribedCoursesRef.current) {
-          if (!nextSubscribed.has(courseId)) {
-            socket.emit('course:unsubscribe', { courseId })
-          }
-        }
-        subscribedCoursesRef.current = nextSubscribed
-      }
+      syncCourseSubscriptions(
+        socket,
+        subscribedCoursesRef.current,
+        subscriptionAttemptsRef.current,
+        courseIds,
+        (error) => console.warn('Failed to subscribe to course live updates:', error)
+      )
     } catch (error) {
       console.error('Failed to fetch live sessions:', error)
       toast.error('Unable to load live classrooms right now')
     }
-  }
+  }, [notifyLectureStarted, socket])
 
   useEffect(() => {
     if (!socket) return undefined
+    const subscribedCourses = subscribedCoursesRef.current
+    const subscriptionAttempts = subscriptionAttemptsRef.current
 
     const updateSessionState = (payload) => {
       if (!payload?.lectureId) return
+      const lectureId = String(payload.lectureId)
+      const status = payload.liveStatus
+      if (status) knownLiveStatusesRef.current.set(lectureId, status)
+      if (status === 'live') {
+        notifyLectureStarted({ ...payload, _id: lectureId })
+      }
 
       setLiveSessions((previous) => {
-        const existingIndex = previous.findIndex((session) => session._id === payload.lectureId)
+        const existingIndex = previous.findIndex((session) => String(session._id) === lectureId)
         if (existingIndex >= 0) {
           return previous.map((session) =>
-            session._id === payload.lectureId
+            String(session._id) === lectureId
               ? { ...session, ...payload, liveStatus: payload.liveStatus || session.liveStatus }
               : session
           )
@@ -106,13 +128,6 @@ const StudentDashboard = () => {
         ]
       })
 
-      if (payload.liveStatus === 'live' && !notifiedLectureIdsRef.current.has(payload.lectureId)) {
-        notifiedLectureIdsRef.current.add(payload.lectureId)
-        toast.success(`A live class is now starting: ${payload.title || 'Live class'}`)
-      }
-      if (payload.liveStatus === 'ended') {
-        notifiedLectureIdsRef.current.add(payload.lectureId)
-      }
     }
 
     const handleStarted = (payload) => updateSessionState({ ...payload, liveStatus: 'live' })
@@ -120,23 +135,32 @@ const StudentDashboard = () => {
     const handleConnect = () => {
       void refreshLiveSessions()
     }
+    const handleDisconnect = () => {
+      subscribedCoursesRef.current.clear()
+      subscriptionAttemptsRef.current.clear()
+    }
 
     socket.on('lecture:started', handleStarted)
     socket.on('lecture:ended', handleEnded)
     socket.on('connect', handleConnect)
+    socket.on('disconnect', handleDisconnect)
+    if (socket.connected) handleConnect()
 
     return () => {
       socket.off('lecture:started', handleStarted)
       socket.off('lecture:ended', handleEnded)
       socket.off('connect', handleConnect)
+      socket.off('disconnect', handleDisconnect)
+      subscribedCourses.clear()
+      subscriptionAttempts.clear()
     }
-  }, [socket])
+  }, [notifyLectureStarted, refreshLiveSessions, socket])
 
   useEffect(() => {
-    fetchDashboardData()
-  }, [])
+    void fetchDashboardData()
+  }, [fetchDashboardData])
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
       const [coursesRes] = await Promise.all([
@@ -157,7 +181,7 @@ const StudentDashboard = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [refreshLiveSessions])
 
   return (
     <div className="space-y-6">
