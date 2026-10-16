@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { BookOpen, Users, DollarSign, TrendingUp, Plus ,Calendar} from 'lucide-react'
 import { teacherApi } from '../../api/teacherApi'
+import { courseApi } from '../../api/courseApi'
 import { logout } from '../../store/slices/authSlice'
 
 const TeacherDashboard = () => {
@@ -18,6 +19,8 @@ const TeacherDashboard = () => {
     pendingCourses: 0
   })
   const [loading, setLoading] = useState(true)
+  const [submittingCourseId, setSubmittingCourseId] = useState(null)
+  const submissionInFlightRef = useRef(false)
 
   const fetchTeacherData = useCallback(async () => {
     try {
@@ -53,6 +56,30 @@ const TeacherDashboard = () => {
   useEffect(() => {
     fetchTeacherData()
   }, [fetchTeacherData])
+
+  const handleSubmitForReview = async (courseId) => {
+    if (submissionInFlightRef.current) return
+
+    submissionInFlightRef.current = true
+    setSubmittingCourseId(courseId)
+    try {
+      const response = await courseApi.submitForReview(courseId)
+      setCourses((currentCourses) =>
+        currentCourses.map((course) =>
+          course._id === courseId
+            ? { ...course, ...response.data.course }
+            : course
+        )
+      )
+      toast.success('Course submitted for review')
+      await fetchTeacherData()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Submission failed')
+    } finally {
+      submissionInFlightRef.current = false
+      setSubmittingCourseId(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -176,12 +203,17 @@ const TeacherDashboard = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Link to={`/teacher/course/${course._id}`} className="btn btn-sm btn-ghost">
+                      <Link to={`/teacher/course/${course._id}/preview`} className="btn btn-sm btn-ghost">
                         View
                       </Link>
-                      {course.status === 'draft' && (
-                        <button className="btn btn-sm btn-primary">
-                          Submit for Review
+                      {course.status === 'draft' && course.lecturesCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleSubmitForReview(course._id)}
+                          disabled={Boolean(submittingCourseId)}
+                          className="btn btn-sm btn-primary"
+                        >
+                          {submittingCourseId === course._id ? 'Submitting...' : 'Submit for Review'}
                         </button>
                       )}
                     </div>

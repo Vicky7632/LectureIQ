@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { 
@@ -16,6 +16,8 @@ const TeacherCourses = () => {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [startingSessionId, setStartingSessionId] = useState(null)
+  const [submittingCourseId, setSubmittingCourseId] = useState(null)
+  const submissionInFlightRef = useRef(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -54,12 +56,26 @@ const TeacherCourses = () => {
   }
 
   const handleSubmitForReview = async (courseId) => {
+    if (submissionInFlightRef.current) return
+
+    submissionInFlightRef.current = true
+    setSubmittingCourseId(courseId)
     try {
-      await courseApi.submitForReview(courseId)
+      const response = await courseApi.submitForReview(courseId)
+      setCourses((currentCourses) =>
+        currentCourses.map((course) =>
+          course._id === courseId
+            ? { ...course, ...response.data.course }
+            : course
+        )
+      )
       toast.success('Course submitted for review')
-      fetchData()   // 👈 refresh after submit
+      await fetchData()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Submission failed')
+    } finally {
+      submissionInFlightRef.current = false
+      setSubmittingCourseId(null)
     }
   }
 
@@ -281,9 +297,14 @@ const TeacherCourses = () => {
 
                   {/* Submit for Review */}
                   {course.status === 'draft' && course.lecturesCount > 0 && (
-                    <button onClick={() => handleSubmitForReview(course._id)} className="btn btn-sm btn-success">
+                    <button
+                      type="button"
+                      onClick={() => handleSubmitForReview(course._id)}
+                      disabled={Boolean(submittingCourseId)}
+                      className="btn btn-sm btn-success"
+                    >
                       <CheckCircle size={16} className="mr-1" />
-                      Submit for Review
+                      {submittingCourseId === course._id ? 'Submitting...' : 'Submit for Review'}
                     </button>
                   )}
 
