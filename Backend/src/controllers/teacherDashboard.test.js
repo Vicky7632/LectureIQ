@@ -5,8 +5,11 @@ const Lecture = require("../models/lecture");
 const Enrollment = require("../models/enrollment");
 const {
   getCourseStudents,
+  getTeacherDashboardStats,
   getTeacherCourseLectures,
 } = require("./teacherDashboard");
+const teacherRouter = require("../routes/teacherRoutes");
+const teacherMiddleware = require("../middleware/teacherMiddleware");
 
 const invokeController = async (req, course) => {
   const originalFindOne = Course.findOne;
@@ -215,4 +218,89 @@ test("does not query the roster when the requested course does not exist", async
   } finally {
     Enrollment.find = originalEnrollmentFind;
   }
+});
+
+test("teacher dashboard statistics are limited to owned courses and active enrollments", async () => {
+  const originals = {
+    courseFind: Course.find,
+    courseCount: Course.countDocuments,
+    enrollmentCount: Enrollment.countDocuments,
+    paymentAggregate: require("../models/payment").aggregate,
+  };
+  const Payment = require("../models/payment");
+  const courseIds = ["owned-course-1", "owned-course-2"];
+  const queries = {};
+  Course.find = (query) => {
+    assert.deepEqual(query, { teacher: "teacher-1" });
+    return { distinct: async (field) => {
+      assert.equal(field, "_id");
+      return courseIds;
+    } };
+  };
+  Course.countDocuments = async (query) => {
+    if (query.status === "pending") {
+      queries.pendingCourse = query;
+      return 1;
+    }
+    queries.courseCount = query;
+    return 2;
+  };
+  Enrollment.countDocuments = async (query) => {
+    queries.enrollment = query;
+    return 3;
+  };
+  Payment.aggregate = async (pipeline) => {
+    queries.payment = pipeline;
+    return [{ total: 450 }];
+  };
+
+  try {
+    const res = {
+      statusCode: null,
+      body: null,
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(body) {
+        this.body = body;
+        return this;
+      },
+    };
+    await getTeacherDashboardStats({ user: { _id: "teacher-1" } }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, {
+      totalCourses: 2,
+      pendingCourses: 1,
+      activeEnrollments: 3,
+      totalRevenue: 450,
+    });
+    assert.deepEqual(queries.courseCount, { teacher: "teacher-1" });
+    assert.deepEqual(queries.pendingCourse, {
+      teacher: "teacher-1",
+      status: "pending",
+    });
+    assert.deepEqual(queries.enrollment, {
+      course: { $in: courseIds },
+      status: "active",
+    });
+    assert.deepEqual(queries.payment[0].$match, {
+      course: { $in: courseIds },
+      status: "success",
+    });
+  } finally {
+    Course.find = originals.courseFind;
+    Course.countDocuments = originals.courseCount;
+    Enrollment.countDocuments = originals.enrollmentCount;
+    Payment.aggregate = originals.paymentAggregate;
+  }
+});
+
+test("teacher dashboard statistics route remains teacher-protected", () => {
+  const route = teacherRouter.stack.find(
+    (layer) => layer.route?.path === "/dashboard-stats" && layer.route.methods.get
+  );
+  assert.ok(route);
+  assert.equal(route.route.stack[0].handle, teacherMiddleware);
 });

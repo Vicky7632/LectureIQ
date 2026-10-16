@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
-import { BookOpen, Users, Clock, TrendingUp, PlayCircle, ChevronRight, Calendar } from 'lucide-react'
+import { BookOpen, Users, TrendingUp, PlayCircle, ChevronRight, Calendar } from 'lucide-react'
 import { courseApi } from '../../api/courseApi'
 import { enrollmentApi } from '../../api/enrollmentApi'
 import { liveApi } from '../../api/liveApi'
@@ -29,10 +29,11 @@ const StudentDashboard = () => {
   const [courses, setCourses] = useState([])
   const [liveSessions, setLiveSessions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [statsError, setStatsError] = useState(false)
   const [stats, setStats] = useState({
     enrolledCourses: 0,
     completedLectures: 0,
-    totalHours: 0,
+    inProgressCourses: 0,
     progress: 0
   })
   const subscribedCoursesRef = useRef(new Set())
@@ -163,25 +164,49 @@ const StudentDashboard = () => {
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
-      const [coursesRes] = await Promise.all([
+      setStatsError(false)
+      const [coursesRes, dashboardRes] = await Promise.all([
         courseApi.getPublishedCourses(),
+        enrollmentApi.getMyCoursesDashboard(),
         refreshLiveSessions(),
       ])
 
       setCourses(coursesRes.data.courses.slice(0, 4))
-
+      const enrolledCourses = dashboardRes.data.courses || []
+      const totalLectures = enrolledCourses.reduce(
+        (total, course) => total + (Number(course.totalLectures) || 0),
+        0
+      )
+      const completedLectures = enrolledCourses.reduce(
+        (total, course) => total + (Number(course.completedLectures) || 0),
+        0
+      )
       setStats({
-        enrolledCourses: 5,
-        completedLectures: 12,
-        totalHours: 24,
-        progress: 65
+        enrolledCourses: enrolledCourses.length,
+        completedLectures,
+        inProgressCourses: enrolledCourses.filter(
+          (course) => course.lastWatchedLecture && course.progressPercent < 100
+        ).length,
+        progress:
+          totalLectures === 0
+            ? 0
+            : Math.round((completedLectures / totalLectures) * 100),
       })
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
+      setStatsError(true)
+      setStats({
+        enrolledCourses: 0,
+        completedLectures: 0,
+        inProgressCourses: 0,
+        progress: 0,
+      })
     } finally {
       setLoading(false)
     }
   }, [refreshLiveSessions])
+  const displayStat = (value) =>
+    loading || statsError ? '—' : Number(value || 0).toLocaleString()
 
   return (
     <div className="space-y-6">
@@ -203,8 +228,8 @@ const StudentDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Enrolled Courses</p>
-                <h3 className="text-2xl font-bold mt-2">{stats.enrolledCourses}</h3>
-                <p className="text-sm text-success mt-1">+2 this month</p>
+                <h3 className="text-2xl font-bold mt-2">{displayStat(stats.enrolledCourses)}</h3>
+                <p className="text-sm text-gray-500 mt-1">Active courses</p>
               </div>
               <div className="p-3 rounded-full bg-primary/10">
                 <BookOpen className="w-6 h-6 text-primary" />
@@ -218,8 +243,8 @@ const StudentDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Completed Lectures</p>
-                <h3 className="text-2xl font-bold mt-2">{stats.completedLectures}</h3>
-                <p className="text-sm text-success mt-1">+5 this week</p>
+                <h3 className="text-2xl font-bold mt-2">{displayStat(stats.completedLectures)}</h3>
+                <p className="text-sm text-gray-500 mt-1">Across your courses</p>
               </div>
               <div className="p-3 rounded-full bg-secondary/10">
                 <PlayCircle className="w-6 h-6 text-secondary" />
@@ -232,12 +257,12 @@ const StudentDashboard = () => {
           <div className="card-body">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Learning Hours</p>
-                <h3 className="text-2xl font-bold mt-2">{stats.totalHours}h</h3>
-                <p className="text-sm text-success mt-1">+8h this month</p>
+                <p className="text-sm text-gray-500">Courses in Progress</p>
+                <h3 className="text-2xl font-bold mt-2">{displayStat(stats.inProgressCourses)}</h3>
+                <p className="text-sm text-gray-500 mt-1">Started, not yet completed</p>
               </div>
               <div className="p-3 rounded-full bg-accent/10">
-                <Clock className="w-6 h-6 text-accent" />
+                <BookOpen className="w-6 h-6 text-accent" />
               </div>
             </div>
           </div>
@@ -248,8 +273,8 @@ const StudentDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Overall Progress</p>
-                <h3 className="text-2xl font-bold mt-2">{stats.progress}%</h3>
-                <p className="text-sm text-success mt-1">+12% this month</p>
+                <h3 className="text-2xl font-bold mt-2">{statsError || loading ? '—' : `${stats.progress}%`}</h3>
+                <p className="text-sm text-gray-500 mt-1">Completed lectures / total lectures</p>
               </div>
               <div className="p-3 rounded-full bg-green-100">
                 <TrendingUp className="w-6 h-6 text-green-600" />
@@ -258,6 +283,11 @@ const StudentDashboard = () => {
           </div>
         </div>
       </div>
+      {statsError && (
+        <p role="alert" className="text-sm text-error">
+          Dashboard statistics are temporarily unavailable.
+        </p>
+      )}
 
       <div className="card bg-base-100 shadow">
         <div className="card-body">
@@ -383,29 +413,6 @@ const StudentDashboard = () => {
               </Link>
             </div>
 
-            <div className="mt-8">
-              <h3 className="font-semibold mb-4">Upcoming Deadlines</h3>
-              <div className="space-y-3">
-                <div className="p-3 bg-warning/10 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">Advanced JavaScript</p>
-                      <p className="text-sm opacity-75">Assignment due tomorrow</p>
-                    </div>
-                    <span className="badge badge-warning">Urgent</span>
-                  </div>
-                </div>
-                <div className="p-3 bg-info/10 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">React Project</p>
-                      <p className="text-sm opacity-75">Submission in 3 days</p>
-                    </div>
-                    <span className="badge badge-info">Upcoming</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

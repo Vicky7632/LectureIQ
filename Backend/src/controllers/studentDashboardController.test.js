@@ -49,15 +49,14 @@ test("student dashboard uses authenticated identity and excludes unpublished cou
   };
   Lecture.countDocuments = async (query) => {
     assert.equal(String(query.course), publishedCourse._id);
-    return 0;
+    return 2;
   };
-  LectureProgress.countDocuments = async () => 0;
+  LectureProgress.countDocuments = async () => 1;
   LectureProgress.findOne = () => ({
     sort: () => ({
       populate: async () => null,
     }),
   });
-
   try {
     const res = response();
     await getMyCoursesDashboard(
@@ -83,7 +82,9 @@ test("student dashboard uses authenticated identity and excludes unpublished cou
         courseId: publishedCourse._id,
         title: publishedCourse.title,
         thumbnail: publishedCourse.thumbnail,
-        progressPercent: 0,
+        totalLectures: 2,
+        completedLectures: 1,
+        progressPercent: 50,
         lastWatchedLecture: null,
       },
     ]);

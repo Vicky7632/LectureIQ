@@ -1,8 +1,19 @@
 const express = require("express");
 const adminMiddleware = require("../middleware/adminMiddleware");
-const { getAllTeachers, getAllCourses, getAllStudents,getAllPayments ,getCourseEnrollments ,getCoursePayments,getRevenueStats} = require("../controllers/adminDashboard");
+const {
+  getAllTeachers,
+  getAllCourses,
+  getAllStudents,
+  getAllPayments,
+  getCourseEnrollments,
+  getCoursePayments,
+  getRevenueStats,
+  getAdminDashboardStats,
+} = require("../controllers/adminDashboard");
 
 const adminRouter = express.Router();
+
+adminRouter.get("/dashboard-stats", adminMiddleware, getAdminDashboardStats);
 
 // GET all teachers
 adminRouter.get("/teachers", adminMiddleware, getAllTeachers);

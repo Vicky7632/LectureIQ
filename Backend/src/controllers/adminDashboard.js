@@ -127,4 +127,40 @@ const getRevenueStats = async (req, res) => {
   }
 };
 
-module.exports = { getAllTeachers, getAllCourses, getAllStudents,getAllPayments,getCourseEnrollments,getCoursePayments,getRevenueStats};
+const getAdminDashboardStats = async (req, res) => {
+  try {
+    const [totalStudents, totalTeachers, totalCourses, pendingApprovals, revenueResults] =
+      await Promise.all([
+        Student.countDocuments({ role: "student" }),
+        Student.countDocuments({ role: "teacher" }),
+        Course.countDocuments(),
+        Course.countDocuments({ status: "pending" }),
+        Payment.aggregate([
+          { $match: { status: "success" } },
+          { $group: { _id: null, total: { $sum: "$amount" } } },
+        ]),
+      ]);
+
+    return res.status(200).json({
+      totalStudents,
+      totalTeachers,
+      totalCourses,
+      pendingApprovals,
+      totalRevenue: revenueResults[0]?.total || 0,
+    });
+  } catch (err) {
+    console.error("AdminDashboardStatsError:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = {
+  getAllTeachers,
+  getAllCourses,
+  getAllStudents,
+  getAllPayments,
+  getCourseEnrollments,
+  getCoursePayments,
+  getRevenueStats,
+  getAdminDashboardStats,
+};

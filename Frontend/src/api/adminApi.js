@@ -1,6 +1,8 @@
 import axiosInstance from './axiosConfig'
 
 export const adminApi = {
+  getDashboardStats: () => axiosInstance.get('/admin/dashboard-stats'),
+
   // Teachers
   getAllTeachers: () => axiosInstance.get('/admin/teachers'),
 

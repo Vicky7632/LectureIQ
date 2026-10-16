@@ -42,30 +42,36 @@ const getCourseStudents = async (req, res) => {
 };
 const getTeacherDashboardStats = async (req, res) => {
     try {
-        const teacherId = req.user.id;
+        const teacherId = req.user._id;
+        const courseIds = await Course.find({ teacher: teacherId }).distinct("_id");
+        const [
+            totalCourses,
+            pendingCourses,
+            activeEnrollments,
+            revenueResults,
+        ] = await Promise.all([
+            Course.countDocuments({ teacher: teacherId }),
+            Course.countDocuments({ teacher: teacherId, status: "pending" }),
+            Enrollment.countDocuments({
+                course: { $in: courseIds },
+                status: "active",
+            }),
+            Payment.aggregate([
+                {
+                    $match: {
+                        course: { $in: courseIds },
+                        status: "success",
+                    },
+                },
+                { $group: { _id: null, total: { $sum: "$amount" } } },
+            ]),
+        ]);
 
-        const courses = await Course.find({ teacher: teacherId });
-        
-        const courseIds = courses.map(c => c._id);
-
-        const totalStudents = await Enrollment.countDocuments({
-            course: { $in: courseIds }
-        });
-
-        const payments = await Payment.find({
-            course: { $in: courseIds },
-            status: "success"
-        });
-
-        const totalRevenue = payments.reduce(
-            (sum, p) => sum + p.amount,
-            0
-        );
-      
         return res.status(200).json({
-            totalCourses: courses.length,
-            totalStudents,
-            totalRevenue
+            totalCourses,
+            pendingCourses,
+            activeEnrollments,
+            totalRevenue: revenueResults[0]?.total || 0,
         });
     } catch (err) {
         return res.status(500).json({ message: "Internal server error" });

@@ -1,11 +1,22 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const Payment = require("../models/payment");
+const Student = require("../models/student");
+const Course = require("../models/course");
 const adminMiddleware = require("../middleware/adminMiddleware");
 const adminRouter = require("../routes/adminRoutes");
-const { getAllPayments, getCoursePayments } = require("./adminDashboard");
+const {
+  getAllPayments,
+  getCoursePayments,
+  getAdminDashboardStats,
+} = require("./adminDashboard");
 
-const originalFind = Payment.find;
+const originals = {
+  paymentFind: Payment.find,
+  paymentAggregate: Payment.aggregate,
+  studentCount: Student.countDocuments,
+  courseCount: Course.countDocuments,
+};
 
 const createResponse = () => ({
   statusCode: null,
@@ -38,7 +49,10 @@ const createPaymentQuery = ({ records, projections, populates }) => ({
 });
 
 test.afterEach(() => {
-  Payment.find = originalFind;
+  Payment.find = originals.paymentFind;
+  Payment.aggregate = originals.paymentAggregate;
+  Student.countDocuments = originals.studentCount;
+  Course.countDocuments = originals.courseCount;
 });
 
 test("admin payment endpoints whitelist response fields and keep enrollment population bounded", async () => {
@@ -102,4 +116,66 @@ test("payment reporting routes remain admin-only", () => {
     assert.ok(route, `missing admin route ${path}`);
     assert.equal(route.route.stack[0].handle, adminMiddleware);
   }
+});
+
+test("admin dashboard returns aggregate counts and successful revenue only", async () => {
+  const countQueries = [];
+  Student.countDocuments = async (query) => {
+    countQueries.push(query);
+    return query.role === "student" ? 12 : 3;
+  };
+  Course.countDocuments = async (query = {}) => {
+    countQueries.push(query);
+    return query.status === "pending" ? 2 : 24;
+  };
+  let revenuePipeline;
+  Payment.aggregate = async (pipeline) => {
+    revenuePipeline = pipeline;
+    return [{ total: 1250 }];
+  };
+
+  const res = createResponse();
+  await getAdminDashboardStats({}, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, {
+    totalStudents: 12,
+    totalTeachers: 3,
+    totalCourses: 24,
+    pendingApprovals: 2,
+    totalRevenue: 1250,
+  });
+  assert.deepEqual(countQueries, [
+    { role: "student" },
+    { role: "teacher" },
+    {},
+    { status: "pending" },
+  ]);
+  assert.deepEqual(revenuePipeline[0], { $match: { status: "success" } });
+});
+
+test("admin dashboard reports zero for empty collections and no successful payments", async () => {
+  Student.countDocuments = async () => 0;
+  Course.countDocuments = async () => 0;
+  Payment.aggregate = async () => [];
+
+  const res = createResponse();
+  await getAdminDashboardStats({}, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, {
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalCourses: 0,
+    pendingApprovals: 0,
+    totalRevenue: 0,
+  });
+});
+
+test("admin dashboard statistics route remains admin-only", () => {
+  const route = adminRouter.stack.find(
+    (layer) => layer.route?.path === "/dashboard-stats" && layer.route.methods.get
+  );
+  assert.ok(route);
+  assert.equal(route.route.stack[0].handle, adminMiddleware);
 });

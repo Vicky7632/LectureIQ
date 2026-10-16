@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
-import { BookOpen, Users, DollarSign, TrendingUp, Plus ,Calendar} from 'lucide-react'
+import { BookOpen, Users, DollarSign, Plus ,Calendar} from 'lucide-react'
 import { teacherApi } from '../../api/teacherApi'
 import { courseApi } from '../../api/courseApi'
 import { logout } from '../../store/slices/authSlice'
@@ -14,17 +14,19 @@ const TeacherDashboard = () => {
   const [courses, setCourses] = useState([])
   const [stats, setStats] = useState({
     totalCourses: 0,
-    totalStudents: 0,
+    activeEnrollments: 0,
     totalRevenue: 0,
     pendingCourses: 0
   })
   const [loading, setLoading] = useState(true)
+  const [statsError, setStatsError] = useState(false)
   const [submittingCourseId, setSubmittingCourseId] = useState(null)
   const submissionInFlightRef = useRef(false)
 
   const fetchTeacherData = useCallback(async () => {
     try {
       setLoading(true)
+      setStatsError(false)
       const [coursesRes, statsRes] = await Promise.all([
         teacherApi.getMyCourses(),
         teacherApi.getDashboardStats()
@@ -34,6 +36,7 @@ const TeacherDashboard = () => {
       setStats(statsRes.data || {})
     } catch (error) {
       console.error('Failed to fetch teacher data:', error)
+      setStatsError(true)
       
       if (error.response?.status === 401) {
         dispatch(logout())
@@ -43,7 +46,7 @@ const TeacherDashboard = () => {
         toast.error('Failed to load dashboard data')
         setStats({
           totalCourses: 0,
-          totalStudents: 0,
+          activeEnrollments: 0,
           totalRevenue: 0,
           pendingCourses: 0
         })
@@ -52,6 +55,8 @@ const TeacherDashboard = () => {
       setLoading(false)
     }
   }, [dispatch, navigate])
+  const displayStat = (value) =>
+    loading || statsError ? '—' : Number(value || 0).toLocaleString()
 
   useEffect(() => {
     fetchTeacherData()
@@ -104,9 +109,15 @@ const TeacherDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total Courses</p>
-                <h3 className="text-2xl font-bold mt-2">{stats.totalCourses}</h3>
+                <h3 className="text-2xl font-bold mt-2">{displayStat(stats.totalCourses)}</h3>
                 <p className="text-sm text-success mt-1">
-                  {stats.pendingCourses > 0 ? `${stats.pendingCourses} pending` : 'All published'}
+                  {loading
+                    ? 'Loading statistics...'
+                    : statsError
+                      ? 'Statistics unavailable'
+                    : stats.pendingCourses > 0
+                      ? `${stats.pendingCourses} pending`
+                      : 'No pending reviews'}
                 </p>
               </div>
               <div className="p-3 rounded-full bg-primary/10">
@@ -120,9 +131,9 @@ const TeacherDashboard = () => {
           <div className="card-body">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total Students</p>
-                <h3 className="text-2xl font-bold mt-2">{stats.totalStudents}</h3>
-                <p className="text-sm text-success mt-1">+12 this month</p>
+                <p className="text-sm text-gray-500">Active Enrollments</p>
+                <h3 className="text-2xl font-bold mt-2">{displayStat(stats.activeEnrollments)}</h3>
+                <p className="text-sm text-gray-500 mt-1">Across courses you own</p>
               </div>
               <div className="p-3 rounded-full bg-secondary/10">
                 <Users className="w-6 h-6 text-secondary" />
@@ -136,8 +147,10 @@ const TeacherDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total Revenue</p>
-                <h3 className="text-2xl font-bold mt-2">₹{stats.totalRevenue.toLocaleString()}</h3>
-                <p className="text-sm text-success mt-1">+15% this month</p>
+                <h3 className="text-2xl font-bold mt-2">
+                  {loading || statsError ? '—' : `₹${Number(stats.totalRevenue || 0).toLocaleString()}`}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">Lifetime successful payments</p>
               </div>
               <div className="p-3 rounded-full bg-accent/10">
                 <DollarSign className="w-6 h-6 text-accent" />
@@ -150,12 +163,12 @@ const TeacherDashboard = () => {
           <div className="card-body">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Completion Rate</p>
-                <h3 className="text-2xl font-bold mt-2">78%</h3>
-                <p className="text-sm text-success mt-1">+8% this month</p>
+                <p className="text-sm text-gray-500">Pending Review</p>
+                <h3 className="text-2xl font-bold mt-2">{displayStat(stats.pendingCourses)}</h3>
+                <p className="text-sm text-gray-500 mt-1">Your courses awaiting review</p>
               </div>
               <div className="p-3 rounded-full bg-green-100">
-                <TrendingUp className="w-6 h-6 text-green-600" />
+                <BookOpen className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </div>

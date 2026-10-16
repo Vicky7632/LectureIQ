@@ -38,11 +38,12 @@ const getMyCoursesDashboard = async (req, res) => {
       })
         .sort({ lastWatchedAt: -1 })
         .populate("lecture", "title order");
-
       dashboard.push({
         courseId: course._id,
         title: course.title,
         thumbnail: course.thumbnail,
+        totalLectures,
+        completedLectures,
         progressPercent:
           totalLectures === 0
             ? 0
