@@ -157,10 +157,6 @@ const StudentDashboard = () => {
     }
   }, [notifyLectureStarted, refreshLiveSessions, socket])
 
-  useEffect(() => {
-    void fetchDashboardData()
-  }, [fetchDashboardData])
-
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
@@ -205,6 +201,11 @@ const StudentDashboard = () => {
       setLoading(false)
     }
   }, [refreshLiveSessions])
+
+  useEffect(() => {
+    void fetchDashboardData()
+  }, [fetchDashboardData])
+
   const displayStat = (value) =>
     loading || statsError ? '—' : Number(value || 0).toLocaleString()
 
