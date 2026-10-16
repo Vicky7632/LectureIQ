@@ -15,6 +15,12 @@ const authMiddleware = async (req, res, next) => {
 
     const user = await Student.findById(payload._id).select("_id firstName lastName email role isEmailVerified isActive");
     if (!user) return res.status(401).json({ message: "User not found" });
+    if (!user.isEmailVerified) {
+      return res.status(403).json({ message: "Email not verified" });
+    }
+    if (!user.isActive) {
+      return res.status(403).json({ message: "Account inactive" });
+    }
 
     req.user = user; // ab har jagah req.user use karo
     next();

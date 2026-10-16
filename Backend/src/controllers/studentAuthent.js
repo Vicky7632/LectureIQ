@@ -543,7 +543,7 @@ const googleAuth = async (req, res) => {
         lastName: family_name || "User",
         email,
         password: "GOOGLE_AUTH", // dummy
-        isVerified: true,
+        isEmailVerified: true,
         emailVerifiedAt: new Date(),
         profileImage: picture,
         role: "student",

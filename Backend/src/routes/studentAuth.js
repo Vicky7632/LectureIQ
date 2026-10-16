@@ -9,7 +9,7 @@ authRouter.post('/register',register);
 //login
 authRouter.post('/login',login);
 //logout
-authRouter.post('/logout',studentMiddleware,logout);
+authRouter.post('/logout',studentMiddleware.forLogout,logout);
 // //verification and recovery
 //email-verify
 authRouter.get('/verify-email',verifyEmail);
@@ -20,7 +20,7 @@ authRouter.post('/forgot-password',forgotPassword);
 //reset-password
 authRouter.post('/reset-password',resetPassword);
  //change-password
-authRouter.post('/change-password',studentMiddleware,changePassword);
+authRouter.post('/change-password',studentMiddleware.withPassword,changePassword);
 // //social auth
  //google-signup and login
 authRouter.post('/google-auth',googleAuth);
