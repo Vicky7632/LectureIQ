@@ -15,7 +15,10 @@ const courseRouter = require("./routes/courseCreate");
 const lectureRouter = require("./routes/lectureCreate");
 const getRouter = require("./routes/courseGet");
 const studentRouter = require("./routes/studentRoutes");
-const paymentRouter = require("./routes/paymentSystem");
+const {
+  paymentRouter,
+  mountPaymentWebhook,
+} = require("./routes/paymentSystem");
 const adminRouter = require("./routes/adminRoutes");
 const teacherRouter = require("./routes/teacherRoutes");
 const profileRouter = require("./routes/profileRoutes");
@@ -26,6 +29,7 @@ const cors=require('cors');
 const { initSocket } = require("./socket");
 
 const app = express();
+mountPaymentWebhook(app);
 app.use(express.json());
 app.use(cors({
     origin: [

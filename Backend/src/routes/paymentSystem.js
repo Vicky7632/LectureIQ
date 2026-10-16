@@ -1,9 +1,17 @@
 const express = require("express");
 const paymentRouter = express.Router();
+const paymentWebhookRouter = express.Router();
 
 const studentMiddleware = require("../middleware/studentMiddleware");
+const {
+  createOrder,
+  verifyPayment,
+  razorpayWebhook,
+} = require("../controllers/purchaseCourse");
 
-const { createOrder, verifyPayment,razorpayWebhook } = require("../controllers/purchaseCourse");
+const mountPaymentWebhook = (app) => {
+  app.use("/payment/webhooks/razorpay", paymentWebhookRouter);
+};
 
 /**
  * =========================
@@ -12,10 +20,10 @@ const { createOrder, verifyPayment,razorpayWebhook } = require("../controllers/p
  */
 
 // Create payment order for a course
-paymentRouter.post("/courses/:courseId/order",studentMiddleware,createOrder);
+paymentRouter.post("/courses/:courseId/order", studentMiddleware, createOrder);
 
 // Verify payment (client-side callback)
-paymentRouter.post( "/verify/razorpay",studentMiddleware,verifyPayment);
+paymentRouter.post("/verify/razorpay", studentMiddleware, verifyPayment);
 
 /**
  * =========================
@@ -23,7 +31,11 @@ paymentRouter.post( "/verify/razorpay",studentMiddleware,verifyPayment);
  * =========================
  */
 
-// Razorpay webhook (FINAL authority)
-paymentRouter.post( "/webhooks/razorpay",express.raw({ type: "application/json" }),razorpayWebhook);
+// Parse the raw body before the global JSON parser so signatures use exact request bytes.
+paymentWebhookRouter.post(
+  "/",
+  express.raw({ type: "application/json" }),
+  razorpayWebhook
+);
 
-module.exports = paymentRouter;
+module.exports = { paymentRouter, paymentWebhookRouter, mountPaymentWebhook };

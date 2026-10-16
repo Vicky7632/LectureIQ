@@ -112,6 +112,10 @@ const createOrder = async (req, res) => {
 
 const verifyPayment = async (req, res) => {
   try {
+    if (!req.student || req.student.role !== "student") {
+      return res.status(403).json({ message: "Student access only" });
+    }
+
     const {
       razorpay_order_id,
       razorpay_payment_id,
@@ -129,20 +133,30 @@ const verifyPayment = async (req, res) => {
       return res.status(400).json({ message: "Invalid signature" });
     }
 
-    const payment = await Payment.findOne({
-      providerOrderId: razorpay_order_id,
-    });
+    const payment = await Payment.findOneAndUpdate(
+      {
+        providerOrderId: razorpay_order_id,
+        paymentProvider: "razorpay",
+        student: req.student._id,
+        status: { $in: ["created", "success"] },
+        $or: [
+          { providerPaymentId: null },
+          { providerPaymentId: razorpay_payment_id },
+        ],
+      },
+      {
+        $set: {
+          providerPaymentId: razorpay_payment_id,
+          providerSignature: razorpay_signature,
+          status: "success",
+        },
+      },
+      { new: true }
+    );
 
     if (!payment) {
-      return res.status(404).json({ message: "Payment not found" });
+      return res.status(404).json({ message: "Payment not found or not eligible" });
     }
-
-    // TEMP update (webhook will finalize)
-    payment.providerPaymentId = razorpay_payment_id;
-    payment.providerSignature = razorpay_signature;
-    payment.status = "success";
-
-    await payment.save();
 
     return res.status(200).json({
       message: "Payment verified, waiting for confirmation",
@@ -152,50 +166,169 @@ const verifyPayment = async (req, res) => {
     return res.status(500).json({ message: "Verification failed" });
   }
 };
+
+const verifyWebhookSignature = (rawBody, signature, secret) => {
+  if (
+    !Buffer.isBuffer(rawBody) ||
+    typeof signature !== "string" ||
+    !/^[a-f\d]{64}$/i.test(signature) ||
+    !secret
+  ) {
+    return false;
+  }
+
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest();
+  const receivedSignature = Buffer.from(signature, "hex");
+
+  return (
+    receivedSignature.length === expectedSignature.length &&
+    crypto.timingSafeEqual(receivedSignature, expectedSignature)
+  );
+};
+
 const razorpayWebhook = async (req, res) => {
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = req.headers["x-razorpay-signature"];
 
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(req.rawBody)
-      .digest("hex");
-
-    if (expected !== signature) {
+    if (!secret) {
+      return res.status(503).json({ message: "Webhook verification is unavailable" });
+    }
+    if (!verifyWebhookSignature(req.body, signature, secret)) {
       return res.status(400).send("Invalid signature");
     }
 
-    const event = req.body.event;
-    const paymentEntity = req.body.payload.payment.entity;
+    let webhook;
+    try {
+      webhook = JSON.parse(req.body.toString("utf8"));
+    } catch {
+      return res.status(400).json({ message: "Invalid webhook payload" });
+    }
 
-    if (event !== "payment.captured") {
+    if (webhook.event !== "payment.captured") {
       return res.status(200).json({ status: "ignored" });
+    }
+
+    const paymentEntity = webhook.payload?.payment?.entity;
+    if (
+      paymentEntity?.status !== "captured" ||
+      typeof paymentEntity.id !== "string" ||
+      typeof paymentEntity.order_id !== "string" ||
+      !Number.isSafeInteger(paymentEntity.amount) ||
+      typeof paymentEntity.currency !== "string"
+    ) {
+      return res.status(400).json({ message: "Invalid captured payment" });
     }
 
     const payment = await Payment.findOne({
       providerOrderId: paymentEntity.order_id,
+      paymentProvider: "razorpay",
     });
-
-    if (!payment || payment.status === "success") {
-      return res.status(200).json({ status: "already_processed" });
+    if (!payment) {
+      return res.status(404).json({ message: "Payment order not found" });
     }
 
-    // FINAL payment update
-    payment.status = "success";
-    payment.providerPaymentId = paymentEntity.id;
-    payment.meta = paymentEntity;
+    if (!["created", "success"].includes(payment.status)) {
+      return res.status(409).json({ message: "Payment is not eligible for capture" });
+    }
 
-    await payment.save();
+    const expectedAmount =
+      typeof payment.amount === "number" ? Math.round(payment.amount * 100) : NaN;
+    if (
+      !Number.isSafeInteger(expectedAmount) ||
+      typeof payment.currency !== "string" ||
+      paymentEntity.amount !== expectedAmount ||
+      paymentEntity.currency.toUpperCase() !== payment.currency.toUpperCase()
+    ) {
+      return res.status(400).json({ message: "Payment amount or currency mismatch" });
+    }
 
-    // ACTIVATE enrollment
-    await Enrollment.findByIdAndUpdate(payment.enrollment, {
-      status: "active",
-      paymentStatus: "paid",
-      enrolledAt: new Date(),
+    if (
+      payment.providerPaymentId &&
+      payment.providerPaymentId !== paymentEntity.id
+    ) {
+      return res.status(409).json({ message: "Payment does not match this order" });
+    }
+
+    const enrollmentQuery = {
+      _id: payment.enrollment,
+      student: payment.student,
+      course: payment.course,
+    };
+    let enrollment = await Enrollment.findOne(enrollmentQuery);
+    if (!enrollment) {
+      return res.status(404).json({ message: "Payment enrollment not found" });
+    }
+    if (!["pending", "active"].includes(enrollment.status)) {
+      return res.status(409).json({ message: "Enrollment is not eligible for activation" });
+    }
+
+    const paymentChanged =
+      payment.status !== "success" ||
+      payment.providerPaymentId !== paymentEntity.id ||
+      !payment.meta;
+    if (paymentChanged) {
+      const paymentUpdate = await Payment.updateOne(
+        {
+          _id: payment._id,
+          paymentProvider: "razorpay",
+          providerOrderId: paymentEntity.order_id,
+          status: { $in: ["created", "success"] },
+          $or: [
+            { providerPaymentId: null },
+            { providerPaymentId: paymentEntity.id },
+          ],
+        },
+        {
+          $set: {
+            status: "success",
+            providerPaymentId: paymentEntity.id,
+            meta: paymentEntity,
+          },
+        },
+      );
+      if (!paymentUpdate.matchedCount) {
+        return res.status(409).json({ message: "Payment does not match this order" });
+      }
+    }
+
+    if (enrollment.status === "pending") {
+      enrollment = await Enrollment.findOneAndUpdate(
+        { ...enrollmentQuery, status: "pending" },
+        {
+          $set: {
+            status: "active",
+            paymentStatus: "paid",
+            enrolledAt: new Date(),
+          },
+        },
+        { new: true }
+      );
+    } else if (enrollment.paymentStatus !== "paid") {
+      enrollment = await Enrollment.findOneAndUpdate(
+        { ...enrollmentQuery, status: "active" },
+        { $set: { paymentStatus: "paid" } },
+        { new: true }
+      );
+    }
+
+    if (!enrollment) {
+      enrollment = await Enrollment.findOne(enrollmentQuery);
+    }
+    if (
+      !enrollment ||
+      enrollment.status !== "active" ||
+      enrollment.paymentStatus !== "paid"
+    ) {
+      return res.status(409).json({ message: "Enrollment could not be activated" });
+    }
+
+    return res.status(200).json({
+      status: paymentChanged ? "ok" : "already_processed",
     });
-
-    return res.status(200).json({ status: "ok" });
   } catch (err) {
     console.error("WebhookError:", err);
     return res.status(500).json({ message: "Webhook error" });
@@ -204,4 +337,4 @@ const razorpayWebhook = async (req, res) => {
 
 
 
-module.exports = { createOrder,verifyPayment ,razorpayWebhook};
+module.exports = { createOrder, verifyPayment, razorpayWebhook };

@@ -10,7 +10,11 @@ const courseRouter=require('./routes/courseCreate');
 const lectureRouter=require('./routes/lectureCreate');
 const getRouter=require('./routes/courseGet');
 const studentRouter=require('./routes/studentRoutes');
-const paymentRouter=require('./routes/paymentSystem');
+const {
+    paymentRouter,
+    mountPaymentWebhook
+}=require('./routes/paymentSystem');
+mountPaymentWebhook(app);
 app.use(express.json());
 app.use(cookieParser());
 app.use('/auth',authRouter);
