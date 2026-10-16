@@ -163,7 +163,12 @@ const TeacherCourses = () => {
                       Course: {courses.find(c => c._id === session.course)?.title || 'Unknown'}
                     </p>
                     <p className="break-words text-sm text-base-content/60">
-                      Status: Scheduled
+                      Scheduled: {session.scheduledAt
+                        ? new Intl.DateTimeFormat(undefined, {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          }).format(new Date(session.scheduledAt))
+                        : 'Time not set'}
                     </p>
                   </div>
                   <button

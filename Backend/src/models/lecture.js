@@ -52,6 +52,7 @@ const lectureSchema = new Schema(
       enum: ["scheduled", "live", "ended"],
       default: "scheduled"
     },
+    scheduledAt: Date,
     recordingStatus: {
   type: String,
   enum: ["not_started", "processing", "ready", "failed"],
@@ -80,4 +81,3 @@ recordingSize: {
 
 const Lecture = mongoose.model("Lecture", lectureSchema);
 module.exports = Lecture;
-

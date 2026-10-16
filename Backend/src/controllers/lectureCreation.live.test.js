@@ -1,9 +1,16 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { PassThrough } = require("node:stream");
+const Course = require("../models/course");
+const Enrollment = require("../models/enrollment");
 const Lecture = require("../models/lecture");
 const lectureRouter = require("../routes/lectureCreate");
-const { startLiveLecture, endLiveLecture } = require("./lectureCreation");
+const {
+  createLiveLecture,
+  getUpcomingLiveLectures,
+  startLiveLecture,
+  endLiveLecture,
+} = require("./lectureCreation");
 const liveRecordingUpload = require("../middleware/liveRecordingUpload");
 
 const teacherId = "teacher-123";
@@ -76,8 +83,258 @@ test("mounts the live start and end routes at the frontend API paths", () => {
         layer.route.methods.get
     )
   );
+  assert.ok(
+    lectureRouter.stack.some(
+      (layer) =>
+        layer.route?.path === "/create-live" &&
+        layer.route.methods.post &&
+        layer.route.stack[0].handle ===
+          require("../middleware/teacherMiddleware")
+    )
+  );
 });
 
+const invokeCreateLiveLecture = async ({
+  body = {},
+  course = {
+    _id: "507f1f77bcf86cd799439011",
+    lecturesCount: 3,
+    save: async function () {
+      this.saved = true;
+    },
+  },
+  createError,
+} = {}) => {
+  const originalCourseFindOne = Course.findOne;
+  const originalLectureCreate = Lecture.create;
+  let courseQuery;
+  let lectureData;
+  Course.findOne = async (query) => {
+    courseQuery = query;
+    return course;
+  };
+  Lecture.create = async (data) => {
+    lectureData = data;
+    if (createError) throw createError;
+    return { _id: "507f1f77bcf86cd799439099", ...data };
+  };
+  const res = createResponse();
+
+  try {
+    await createLiveLecture(
+      {
+        user: { _id: teacherId },
+        body: {
+          courseId: "507f1f77bcf86cd799439011",
+          title: "Weekly live class",
+          scheduledAt: new Date(Date.now() + 60_000).toISOString(),
+          ...body,
+        },
+      },
+      res
+    );
+    return { res, courseQuery, lectureData, course };
+  } finally {
+    Course.findOne = originalCourseFindOne;
+    Lecture.create = originalLectureCreate;
+  }
+};
+
+test("creates an owned live lecture with a future timezone-aware schedule", async () => {
+  const scheduledAt = new Date(Date.now() + 60_000).toISOString();
+  const { res, courseQuery, lectureData, course } =
+    await invokeCreateLiveLecture({
+      body: { scheduledAt, order: 1 },
+    });
+
+  assert.deepEqual(courseQuery, {
+    _id: "507f1f77bcf86cd799439011",
+    teacher: teacherId,
+    status: { $ne: "rejected" },
+  });
+  assert.equal(res.statusCode, 201);
+  assert.equal(res.body.lecture.liveStatus, "scheduled");
+  assert.equal(res.body.lecture.lectureType, "live");
+  assert.equal(lectureData.scheduledAt.toISOString(), scheduledAt);
+  assert.equal(lectureData.order, 4);
+  assert.equal(course.lecturesCount, 4);
+  assert.equal(course.saved, true);
+});
+
+test("persists a non-UTC schedule as the equivalent absolute time", async () => {
+  const expectedDate = new Date(Date.now() + 60_000);
+  const localClock = new Date(
+    expectedDate.getTime() + 5 * 60 * 60 * 1000 + 30 * 60 * 1000
+  )
+    .toISOString()
+    .replace("Z", "+05:30");
+  const { res, lectureData } = await invokeCreateLiveLecture({
+    body: { scheduledAt: localClock },
+  });
+
+  assert.equal(res.statusCode, 201);
+  assert.equal(lectureData.scheduledAt.getTime(), expectedDate.getTime());
+});
+
+test("rejects missing, malformed, invalid-calendar, and past schedule times", async () => {
+  let courseQueried = false;
+  const originalCourseFindOne = Course.findOne;
+  Course.findOne = async () => {
+    courseQueried = true;
+    return null;
+  };
+  const invalidTimes = [
+    undefined,
+    "not-a-date",
+    "2030-02-30T14:30:00Z",
+    "2030-01-01T10:00:00",
+    "2000-01-01T10:00:00Z",
+  ];
+
+  try {
+    for (const scheduledAt of invalidTimes) {
+      const res = createResponse();
+      await createLiveLecture(
+        {
+          user: { _id: teacherId },
+          body: {
+            courseId: "507f1f77bcf86cd799439011",
+            title: "Weekly live class",
+            scheduledAt,
+          },
+        },
+        res
+      );
+      assert.equal(res.statusCode, 400);
+    }
+    assert.equal(courseQueried, false);
+  } finally {
+    Course.findOne = originalCourseFindOne;
+  }
+});
+
+test("rejects invalid course IDs and short titles before database access", async () => {
+  const originalCourseFindOne = Course.findOne;
+  Course.findOne = () => {
+    assert.fail("Invalid input must be rejected before course lookup");
+  };
+  const validSchedule = new Date(Date.now() + 60_000).toISOString();
+
+  try {
+    for (const body of [
+      {
+        courseId: "invalid-course",
+        title: "Weekly live class",
+        scheduledAt: validSchedule,
+      },
+      {
+        courseId: "507f1f77bcf86cd799439011",
+        title: "  ",
+        scheduledAt: validSchedule,
+      },
+    ]) {
+      const res = createResponse();
+      await createLiveLecture(
+        { user: { _id: teacherId }, body },
+        res
+      );
+      assert.equal(res.statusCode, 400);
+    }
+  } finally {
+    Course.findOne = originalCourseFindOne;
+  }
+});
+
+test("does not create a live lecture for a course not owned by the teacher", async () => {
+  const originalCourseFindOne = Course.findOne;
+  const originalLectureCreate = Lecture.create;
+  Course.findOne = async (query) => {
+    assert.equal(String(query.teacher), teacherId);
+    return null;
+  };
+  Lecture.create = () => {
+    assert.fail("Lecture must not be created for another teacher's course");
+  };
+  const res = createResponse();
+
+  try {
+    await createLiveLecture(
+      {
+        user: { _id: teacherId },
+        body: {
+          courseId: "507f1f77bcf86cd799439011",
+          title: "Weekly live class",
+          scheduledAt: new Date(Date.now() + 60_000).toISOString(),
+        },
+      },
+      res
+    );
+    assert.equal(res.statusCode, 403);
+  } finally {
+    Course.findOne = originalCourseFindOne;
+    Lecture.create = originalLectureCreate;
+  }
+});
+
+test("returns a server error when live lecture persistence fails", async () => {
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  try {
+    const { res } = await invokeCreateLiveLecture({
+      createError: new Error("database unavailable"),
+    });
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.message, "Internal server error");
+  } finally {
+    console.error = originalConsoleError;
+  }
+});
+
+test("returns scheduled and live sessions to enrolled students ordered by scheduled time", async () => {
+  const originalCourseFindOne = Course.findOne;
+  const originalEnrollmentFindOne = Enrollment.findOne;
+  const originalLectureFind = Lecture.find;
+  const scheduledAt = new Date(Date.now() + 60_000);
+  let lectureQuery;
+  let sortQuery;
+  Course.findOne = () => ({
+    select: async () => ({ _id: "507f1f77bcf86cd799439011" }),
+  });
+  Enrollment.findOne = () => ({
+    select: async () => ({ _id: "507f1f77bcf86cd799439055" }),
+  });
+  Lecture.find = (query) => {
+    lectureQuery = query;
+    return {
+      sort: async (sort) => {
+        sortQuery = sort;
+        return [{ _id: "lecture-1", scheduledAt, liveStatus: "scheduled" }];
+      },
+    };
+  };
+  const res = createResponse();
+
+  try {
+    await getUpcomingLiveLectures(
+      {
+        params: { courseId: "507f1f77bcf86cd799439011" },
+        user: {
+          _id: "507f1f77bcf86cd799439012",
+          role: "student",
+        },
+      },
+      res
+    );
+
+    assert.deepEqual(lectureQuery.liveStatus, { $in: ["scheduled", "live"] });
+    assert.deepEqual(sortQuery, { scheduledAt: 1, createdAt: 1 });
+    assert.equal(res.body.sessions[0].scheduledAt, scheduledAt);
+  } finally {
+    Course.findOne = originalCourseFindOne;
+    Enrollment.findOne = originalEnrollmentFindOne;
+    Lecture.find = originalLectureFind;
+  }
+});
 test("starts a scheduled live lecture and persists the live state", async () => {
   const lecture = createLecture();
   const response = await invokeController(

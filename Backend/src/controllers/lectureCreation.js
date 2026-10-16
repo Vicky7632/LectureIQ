@@ -1,6 +1,7 @@
 const Lecture = require("../models/lecture");
 const Course = require("../models/course");
 const Enrollment = require("../models/enrollment");
+const mongoose = require("mongoose");
 const cloudinary = require('../config/cloudinary'); 
 const { loadAuthorizedLiveLecture } = require("../services/liveLectureAccess");
 
@@ -81,11 +82,65 @@ const createLecture = async (req, res) => {
 const createLiveLecture = async (req, res) => {
   try {
     const teacherId = req.user._id;
-    const { title, description, courseId, order } = req.body;
+    const { title, description, courseId, scheduledAt } = req.body;
 
-    // basic validation
-    if (!title || !courseId) {
-      return res.status(400).json({ message: "Title and courseId are required" });
+    if (
+      typeof title !== "string" ||
+      title.trim().length < 3 ||
+      !mongoose.isValidObjectId(courseId)
+    ) {
+      return res.status(400).json({
+        message: "A valid courseId and a title of at least 3 characters are required",
+      });
+    }
+
+    const scheduledAtMatch =
+      typeof scheduledAt === "string"
+        ? scheduledAt.match(
+            /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(?:Z|[+-]\d{2}:\d{2})$/
+          )
+        : null;
+    if (!scheduledAtMatch) {
+      return res.status(400).json({
+        message: "A scheduledAt date with a timezone is required",
+      });
+    }
+
+    const scheduledDate = new Date(scheduledAt);
+    const [
+      ,
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+      milliseconds = "",
+    ] = scheduledAtMatch;
+    const calendarDate = new Date(
+      Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute),
+        Number(second),
+        Number(milliseconds.padEnd(3, "0"))
+      )
+    );
+    if (
+      Number.isNaN(scheduledDate.getTime()) ||
+      calendarDate.getUTCFullYear() !== Number(year) ||
+      calendarDate.getUTCMonth() !== Number(month) - 1 ||
+      calendarDate.getUTCDate() !== Number(day) ||
+      calendarDate.getUTCHours() !== Number(hour) ||
+      calendarDate.getUTCMinutes() !== Number(minute) ||
+      calendarDate.getUTCSeconds() !== Number(second) ||
+      scheduledDate.getTime() <= Date.now()
+    ) {
+      return res.status(400).json({
+        message: "The live lecture must be scheduled for a future time",
+      });
     }
 
     // course ownership check
@@ -102,15 +157,16 @@ const createLiveLecture = async (req, res) => {
     // create live lecture – no video fields
     const lecture = await Lecture.create({
       title,
-      description,
+      description: typeof description === "string" ? description.trim() : "",
       videoUrl: null,
       cloudinaryPublicId: null,
       duration: 0,
       course: courseId,
-      order: order || course.lecturesCount + 1,
+      order: course.lecturesCount + 1,
       isPreview: false,
       lectureType: "live",
       liveStatus: "scheduled",
+      scheduledAt: scheduledDate,
       teacher: teacherId,
     });
 
@@ -324,7 +380,10 @@ const getUpcomingLiveLectures = async (req, res) => {
       query.liveStatus = { $in: ["scheduled", "live"] };
     }
 
-    const lectures = await Lecture.find(query).sort({ scheduledTime: 1 });
+    const lectures = await Lecture.find(query).sort({
+      scheduledAt: 1,
+      createdAt: 1,
+    });
     res.json({ sessions: lectures });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });

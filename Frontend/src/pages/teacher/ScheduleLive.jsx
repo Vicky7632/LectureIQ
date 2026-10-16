@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,49 +7,86 @@ import { toast } from 'react-hot-toast';
 import { ArrowLeft } from 'lucide-react';
 import { courseApi } from '../../api/courseApi';
 import { liveApi } from '../../api/liveApi';
+import {
+  getLocalDateTimeInputValue,
+  isFutureLocalDateTime,
+  toScheduledAtISOString,
+} from './liveScheduleUtils';
 
 const schema = z.object({
   courseId: z.string().min(1, 'Course is required'),
-  title: z.string().min(3, 'Title must be at least 3 characters'),
+  title: z.string().trim().min(3, 'Title must be at least 3 characters'),
   description: z.string().optional(),
+  scheduledAt: z
+    .string()
+    .min(1, 'Schedule date and time are required')
+    .refine(
+      (value) => isFutureLocalDateTime(value),
+      'Choose a valid time in the future'
+    ),
 });
 
 const ScheduleLive = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [coursesError, setCoursesError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const submissionInFlightRef = useRef(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
   });
 
   useEffect(() => {
+    let isCurrent = true;
     const fetchCourses = async () => {
       try {
         const res = await courseApi.getTeacherCourses();
-        setCourses((res.data.courses || []).filter((course) => course.status !== 'rejected'));
-      } catch {
-        toast.error('Failed to load courses');
+        if (isCurrent) {
+          setCourses(
+            (res.data.courses || []).filter(
+              (course) => course.status !== 'rejected'
+            )
+          );
+        }
+      } catch (error) {
+        if (isCurrent) {
+          setCoursesError(
+            error.response?.data?.message || 'Failed to load courses'
+          );
+        }
+      } finally {
+        if (isCurrent) setCoursesLoading(false);
       }
     };
-    fetchCourses();
+    void fetchCourses();
+    return () => {
+      isCurrent = false;
+    };
   }, []);
 
   const onSubmit = async (data) => {
-    setLoading(true);
+    if (submissionInFlightRef.current) return;
+
+    submissionInFlightRef.current = true;
+    setSubmitting(true);
     try {
       await liveApi.schedule({
-        ...data,
+        courseId: data.courseId,
+        title: data.title.trim(),
+        description: data.description?.trim() || '',
+        scheduledAt: toScheduledAtISOString(data.scheduledAt),
         lectureType: 'live',
         isPreview: false,
-        order: 1, // backend will adjust based on lectures count
       });
       toast.success('Live lecture scheduled');
       navigate('/teacher/courses');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Scheduling failed');
     } finally {
-      setLoading(false);
+      submissionInFlightRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -71,6 +108,17 @@ const ScheduleLive = () => {
                 ))}
               </select>
               {errors.courseId && <p className="text-error text-sm mt-1">{errors.courseId.message}</p>}
+              {!coursesLoading && !coursesError && courses.length === 0 && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Create a course before scheduling a live lecture.
+                </p>
+              )}
+              {coursesLoading && (
+                <p className="mt-1 text-sm text-gray-500">Loading your courses...</p>
+              )}
+              {coursesError && (
+                <p className="mt-1 text-sm text-error" role="alert">{coursesError}</p>
+              )}
             </div>
             <div className="form-control">
               <label className="label">Title</label>
@@ -78,12 +126,32 @@ const ScheduleLive = () => {
               {errors.title && <p className="text-error text-sm mt-1">{errors.title.message}</p>}
             </div>
             <div className="form-control">
+              <label className="label" htmlFor="scheduledAt">Date and time</label>
+              <input
+                id="scheduledAt"
+                type="datetime-local"
+                min={getLocalDateTimeInputValue()}
+                className={`input input-bordered w-full ${errors.scheduledAt ? 'input-error' : ''}`}
+                {...register('scheduledAt')}
+              />
+              {errors.scheduledAt && (
+                <p className="mt-1 text-sm text-error">{errors.scheduledAt.message}</p>
+              )}
+              <p className="mt-1 text-sm text-gray-500">
+                Times are scheduled in your local time zone.
+              </p>
+            </div>
+            <div className="form-control">
               <label className="label">Description (optional)</label>
               <textarea className="textarea textarea-bordered w-full" {...register('description')} rows="3" />
             </div>
             <div className="mt-6 flex w-full justify-end">
-              <button type="submit" className="btn btn-primary w-full sm:w-auto" disabled={loading}>
-                {loading ? 'Scheduling...' : 'Schedule'}
+              <button
+                type="submit"
+                className="btn btn-primary w-full sm:w-auto"
+                disabled={submitting || coursesLoading || courses.length === 0}
+              >
+                {submitting ? 'Scheduling...' : 'Schedule'}
               </button>
             </div>
           </form>

@@ -65,7 +65,12 @@ const UpcomingLive = () => {
                   </div>
                   <p className="text-sm text-gray-600">{session.description}</p>
                   <p className="mt-2 text-sm text-gray-500">
-                    {isLive ? 'Started:' : 'Scheduled:'} {formatLiveTime(session.startedAt || session.createdAt || session.scheduledAt)}
+                    {isLive ? 'Started:' : 'Scheduled:'}{' '}
+                    {formatLiveTime(
+                      isLive
+                        ? session.startedAt || session.scheduledAt
+                        : session.scheduledAt || session.createdAt
+                    )}
                   </p>
                   <div className="card-actions justify-end mt-4">
                     {isLive ? (
