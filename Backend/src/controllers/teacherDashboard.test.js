@@ -161,7 +161,7 @@ test("returns the existing roster response for the owning teacher, preserving en
   assert.deepEqual(enrollmentQuery, { course: "course-1" });
   assert.deepEqual(populatedFields, {
     path: "student",
-    fields: "firstName lastName email",
+    fields: "firstName lastName email profileImage",
   });
   assert.deepEqual(sortQuery, { enrolledAt: -1 });
   assert.deepEqual(

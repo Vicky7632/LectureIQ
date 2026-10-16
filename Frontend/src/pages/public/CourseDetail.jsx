@@ -6,6 +6,7 @@ import {
   ChevronRight, Calendar, Globe, Award, Shield
 } from 'lucide-react'
 import { courseApi } from '../../api/courseApi'
+import UserAvatar from '../../components/common/UserAvatar'
 import { enrollmentApi } from '../../api/enrollmentApi'
 import { paymentApi } from '../../api/paymentapi'
 import { getLecturePlayerPath } from '../../routes/lecturePlayerRoutes'
@@ -246,11 +247,10 @@ const CourseDetail = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="avatar">
-                    <div className="w-12 h-12 rounded-full bg-base-100 text-primary flex items-center justify-center">
-                      {course.teacher?.firstName?.charAt(0)}{course.teacher?.lastName?.charAt(0)}
-                    </div>
-                  </div>
+                  <UserAvatar
+                    user={course.teacher}
+                    sizeClass="h-12 w-12"
+                  />
                   <div>
                     <p className="font-semibold">Created by</p>
                     <p>{course.teacher?.firstName} {course.teacher?.lastName}</p>
@@ -478,11 +478,11 @@ const CourseDetail = () => {
                 <div className="card-body">
                   <h3 className="font-bold mb-4">Instructor</h3>
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="avatar">
-                      <div className="w-16 h-16 rounded-full bg-primary text-primary-content flex items-center justify-center text-xl">
-                        {course.teacher?.firstName?.charAt(0)}{course.teacher?.lastName?.charAt(0)}
-                      </div>
-                    </div>
+                    <UserAvatar
+                      user={course.teacher}
+                      sizeClass="h-16 w-16"
+                      textClass="text-xl"
+                    />
                     <div>
                       <h4 className="font-bold">{course.teacher?.firstName} {course.teacher?.lastName}</h4>
                       <p className="text-sm text-gray-500">Senior Instructor</p>

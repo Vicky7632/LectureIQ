@@ -3,6 +3,7 @@ import { Mail, CheckCircle, Calendar } from 'lucide-react'
 
 import Card from '../common/Card'
 import Button from '../common/Button'
+import UserAvatar from '../common/UserAvatar'
 
 const TeacherVerificationCard = ({ 
   teacher, 
@@ -13,13 +14,11 @@ const TeacherVerificationCard = ({
     <Card className="mb-4">
       <div className="flex min-w-0 flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-          <div className="avatar placeholder">
-            <div className="bg-primary text-primary-content rounded-full w-12 h-12">
-              <span className="text-lg">
-                {teacher.firstName?.charAt(0)}{teacher.lastName?.charAt(0)}
-              </span>
-            </div>
-          </div>
+          <UserAvatar
+            user={teacher}
+            sizeClass="h-12 w-12"
+            textClass="text-lg"
+          />
           <div className="min-w-0">
             <h3 className="font-bold text-lg">
               {teacher.firstName} {teacher.lastName}

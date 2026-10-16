@@ -17,6 +17,10 @@ import "@livekit/components-styles";
 import { liveApi } from "../../api/liveApi";
 import { useSocket } from "../../contexts/socketContextHooks";
 import ChatBox from "../../components/live/ChatBox";
+import {
+  isElementFullscreen,
+  toggleElementFullscreen,
+} from "../../utils/fullscreen";
 
 const isPermissionDenied = (error) =>
   ["NotAllowedError", "PermissionDeniedError", "SecurityError"].includes(
@@ -162,11 +166,12 @@ const LiveSessionRoom = () => {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      const fullscreen = document.fullscreenElement === classroomRef.current;
+      const fullscreen = isElementFullscreen(classroomRef.current);
       setIsFullscreen(fullscreen);
       if (fullscreen) setFullscreenError("");
     };
 
+    handleFullscreenChange();
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
@@ -275,11 +280,8 @@ const LiveSessionRoom = () => {
 
     setFullscreenError("");
     try {
-      if (document.fullscreenElement === classroom) {
-        await document.exitFullscreen();
-      } else if (classroom.requestFullscreen && document.fullscreenEnabled) {
-        await classroom.requestFullscreen();
-      } else {
+      const result = await toggleElementFullscreen(classroom);
+      if (!result.ok && result.reason === "unsupported") {
         setFullscreenError("Full screen is not available in this browser.");
       }
     } catch (error) {

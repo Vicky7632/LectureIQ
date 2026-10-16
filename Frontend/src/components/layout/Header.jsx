@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, Bell, Search, User, LogOut, BookOpen } from 'lucide-react'
-import { logout } from '../../store/slices/authSlice'
+import { Menu, Bell, Search, LogOut, BookOpen } from 'lucide-react'
+import { logout, setUser } from '../../store/slices/authSlice'
 import { getRoleNavigationLinks } from './navigationLinks'
 import { useSocket } from '../../contexts/socketContextHooks'
+import { profileApi } from '../../api/profileApi'
+import UserAvatar from '../common/UserAvatar'
 import { enrollmentApi } from '../../api/enrollmentApi'
 import { teacherApi } from '../../api/teacherApi'
 import { adminApi } from '../../api/adminApi'
@@ -43,6 +45,21 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const notifications =
     notificationState.userId === currentUserId ? notificationState.items : []
   const unreadCount = notifications.filter(({ read }) => !read).length
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined
+    let current = true
+    profileApi.getProfile()
+      .then(({ data }) => {
+        if (current) dispatch(setUser({ user: { ...data.profile, role: data.role } }))
+      })
+      .catch((error) => {
+        console.error('Failed to refresh authenticated profile:', error)
+      })
+    return () => {
+      current = false
+    }
+  }, [dispatch, isAuthenticated])
 
   const handleSearch = (event) => {
     event.preventDefault()
@@ -222,10 +239,8 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
 
             {/* DaisyUI dropdown – NO manual state */}
             <div className="dropdown dropdown-end">
-              <div tabIndex={0} role="button" aria-label="Open account menu" className="btn btn-ghost btn-circle avatar">
-                <div className="w-8 rounded-full bg-primary text-primary-content flex items-center justify-center">
-                  {user?.firstName?.charAt(0) || <User size={16} />}
-                </div>
+              <div tabIndex={0} role="button" aria-label="Open account menu" className="btn btn-ghost btn-circle p-0">
+                <UserAvatar user={user} sizeClass="h-8 w-8" />
               </div>
               <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
                 <li className="menu-title">

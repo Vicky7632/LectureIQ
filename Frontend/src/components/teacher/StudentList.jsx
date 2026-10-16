@@ -1,5 +1,6 @@
 import React from 'react'
 import { Mail, Clock } from 'lucide-react'
+import UserAvatar from '../common/UserAvatar'
 
 const StudentList = ({ students }) => {
   if (!students || students.length === 0) {
@@ -26,14 +27,7 @@ const StudentList = ({ students }) => {
             <tr key={enrollment._id}>
               <td>
                 <div className="flex items-center gap-3">
-                  <div className="avatar placeholder">
-                    <div className="bg-neutral text-neutral-content rounded-full w-8">
-                      <span>
-                        {enrollment.student?.firstName?.charAt(0)}
-                        {enrollment.student?.lastName?.charAt(0)}
-                      </span>
-                    </div>
-                  </div>
+                  <UserAvatar user={enrollment.student} sizeClass="h-8 w-8" />
                   <div>
                     <div className="font-bold">
                       {enrollment.student?.firstName} {enrollment.student?.lastName}

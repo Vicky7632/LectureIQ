@@ -118,9 +118,11 @@ const login=async (req,res)=>{
 
         const reply={
             firstName:student.firstName,
+            lastName:student.lastName,
             email:student.email,
             _id:student._id,
-            role:student.role
+            role:student.role,
+            profileImage:student.profileImage || null,
         }
     res.status(200).json({
          student:reply,
@@ -434,8 +436,10 @@ const verifyEmail = async (req, res) => {
       student: {
         _id: student._id,
         firstName: student.firstName,
+        lastName: student.lastName,
         email: student.email,
         role: student.role,
+        profileImage: student.profileImage || null,
       },
     });
   } catch (err) {
@@ -549,6 +553,10 @@ const googleAuth = async (req, res) => {
         role: "student",
       });
     }
+    if (!student.profileImage && picture) {
+      student.profileImage = picture;
+      await student.save();
+    }
 
     // JWT
     const token = jwt.sign(
@@ -578,6 +586,7 @@ const googleAuth = async (req, res) => {
         lastName: student.lastName,
         email: student.email,
         role: student.role,
+        profileImage: student.profileImage || picture || null,
       },
     });
   } catch (err) {

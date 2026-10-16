@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { ArrowLeft, Users, Mail, Calendar, Download } from 'lucide-react'
 import { teacherApi } from '../../api/teacherApi'
+import UserAvatar from '../../components/common/UserAvatar'
 
 const CourseStudents = () => {
   const { id: courseId } = useParams()
@@ -106,14 +107,7 @@ const CourseStudents = () => {
                 <tr key={idx}>
                   <td>
                     <div className="flex items-center gap-3">
-                      <div className="avatar placeholder">
-                        <div className="bg-neutral text-neutral-content rounded-full w-10">
-                          <span>
-                            {item.student?.firstName?.charAt(0) || '?'}
-                            {item.student?.lastName?.charAt(0) || ''}
-                          </span>
-                        </div>
-                      </div>
+                      <UserAvatar user={item.student} sizeClass="h-10 w-10" />
                       <div>
                         <div className="font-bold">
                           {item.student?.firstName} {item.student?.lastName}

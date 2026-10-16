@@ -7,13 +7,15 @@ LectureIQ includes AI-generated study summaries of the lecture description text.
 ## Key Features
 
 - Public course catalogue and course details.
+- Search across published course titles, descriptions, categories, and levels.
 - Student registration, email verification, login, password recovery, and Google sign-in.
+- Authenticated profile details and consistent profile avatars with initials fallback.
 - Role-specific student, teacher, and admin views and protected routes.
 - Teacher course and lecture creation, course submission for review, and admin approval/rejection.
 - Student enrollment, course access, and lecture progress tracking.
 - Recorded lecture uploads and scheduled live lectures.
 - On-demand AI study summaries generated from lecture descriptions.
-- Live-session UI with LiveKit Cloud video/audio media and Socket.IO chat/classroom events.
+- Live classrooms with LiveKit Cloud video/audio, Socket.IO chat/classroom events, and classroom fullscreen controls.
 - Razorpay course payments, payment verification, and a webhook endpoint.
 - Teacher and admin dashboards for courses, students, enrollments, payments, and revenue.
 - Cloudinary-backed media upload configuration.
@@ -188,7 +190,7 @@ The backend base URL is `http://localhost:3000`. These paths are relative to tha
 | `POST` | `/auth/admin/register` | Admin-only account creation |
 | `POST` | `/auth/teacher/register` | Admin-only teacher creation |
 | `PATCH` | `/auth/admin/teacher/verify/:teacherId` | Admin verifies a teacher |
-| `GET` | `/user/courses` | List published courses |
+| `GET` | `/user/courses?q=...` | List or search published courses |
 | `GET` | `/user/course/:courseId` | Course details; optional authentication |
 | `GET` | `/user/course/:courseId/lectures` | Course lectures; optional authentication |
 | `POST` | `/course/create` | Teacher creates a course |
@@ -246,7 +248,11 @@ The Socket.IO server is attached to the backend HTTP server; it is not an Expres
 
 The request has no body. A verified, active teacher can summarize their own course's lectures; a verified, active admin can summarize any existing lecture; a verified, active student can summarize a lecture in a published free course, an eligible preview lecture, or a paid course for which they have an active enrollment. The endpoint refuses missing descriptions and descriptions over 20,000 characters. Provider requests have a 30-second timeout and a 600-token output limit. Configure `OPENAI_API_KEY` in `Backend/.env`; it is never sent to the browser. Video and audio are not included because the application has no transcription pipeline.
 
-The backend implements authenticated Socket.IO events for joining/leaving lecture rooms, participant presence, chat broadcasts, and WebRTC offer/answer/ICE-candidate relay. The live-session page uses the shared socket connection from its context. Live room membership is checked against the lecture, course ownership, and active student enrollment; the chat payload contains only a lecture ID and text, while sender identity and timestamp are set by the server. The live-session page includes teacher media capture and student playback via browser WebRTC APIs.
+The backend implements authenticated Socket.IO events for joining/leaving lecture rooms, participant presence, and chat broadcasts. The live-session page uses the shared socket connection from its context. Live room membership is checked against the lecture, course ownership, and active student enrollment; the chat payload contains only a lecture ID and text, while sender identity and timestamp are set by the server. Socket.IO does not transport video or audio: authorized participants receive short-lived LiveKit room tokens, and LiveKit Cloud carries the real-time media. Teachers publish camera and microphone tracks after the browser grants permission; students subscribe to the room's published tracks.
+
+Profile endpoints return the schema-backed `profileImage` field for the authenticated account. Google sign-in can provide that image; LectureIQ currently has no profile-image upload endpoint. Avatar components use the image URL as returned, fall back to the user's initials when it is absent, and show the fallback if loading fails.
+
+The live classroom's **Full Screen** control targets the classroom container, including its video and classroom controls, rather than the whole application page. The control state follows browser fullscreen changes, including browser-driven exits such as Escape. Unsupported fullscreen APIs and rejected browser requests are reported in the classroom UI.
 
 Chat event contract:
 

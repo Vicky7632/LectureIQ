@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import { Users, Mail, Search } from 'lucide-react'
 import { adminApi } from '../../api/adminApi'
+import UserAvatar from '../../components/common/UserAvatar'
 
 const AdminStudents = () => {
   const [students, setStudents] = useState([])
@@ -77,11 +78,7 @@ const AdminStudents = () => {
                 <tr key={student._id}>
                   <td>
                     <div className="flex items-center gap-3">
-                      <div className="avatar placeholder">
-                        <div className="bg-neutral text-neutral-content rounded-full w-10">
-                          <span>{student.firstName?.charAt(0)}{student.lastName?.charAt(0)}</span>
-                        </div>
-                      </div>
+                      <UserAvatar user={student} sizeClass="h-10 w-10" />
                       <div>
                         <div className="font-bold">{student.firstName} {student.lastName}</div>
                       </div>

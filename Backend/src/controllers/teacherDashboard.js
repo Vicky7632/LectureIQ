@@ -32,7 +32,7 @@ const getCourseStudents = async (req, res) => {
         }
 
         const students = await Enrollment.find({ course: courseId })
-            .populate("student", "firstName lastName email")
+            .populate("student", "firstName lastName email profileImage")
             .sort({ enrolledAt: -1 });
 
         return res.status(200).json({ students });

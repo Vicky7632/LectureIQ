@@ -12,7 +12,7 @@ const stripPaymentInternals = (payment) => {
 const getAllTeachers = async (req, res) => {
   try {
     const teachers = await Student.find({ role: "teacher" }).select(
-      "_id firstName lastName email isVerified isActive createdAt isEmailVerified phoneNumber bio"
+      "_id firstName lastName email isVerified isActive createdAt isEmailVerified phoneNumber bio profileImage"
     );
     return res.status(200).json({ teachers });
   } catch (err) {
@@ -36,7 +36,7 @@ const getAllCourses = async (req, res) => {
 const getAllStudents = async (req, res) => {
   try {
     const students = await Student.find({ role: "student" }).select(
-      "_id firstName lastName email isVerified isActive"
+      "_id firstName lastName email isVerified isActive profileImage"
     );
     return res.status(200).json({ students });
   } catch (err) {

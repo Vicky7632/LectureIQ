@@ -53,7 +53,7 @@ const getPublishedCourses = async (req, res) => {
 
         const courses = await Course.find(courseFilter)
             .select(publicCourseFields)
-            .populate("teacher", "firstName lastName");
+            .populate("teacher", "firstName lastName profileImage");
         const enrollmentCounts = await Enrollment.aggregate([
             { $match: { status: "active" } },
             { $group: { _id: "$course", count: { $sum: 1 } } },
@@ -85,7 +85,7 @@ const getCourseById = async (req, res) => {
             status: "published",
         })
             .select(publicCourseFields)
-            .populate("teacher", "firstName lastName");
+            .populate("teacher", "firstName lastName profileImage");
 
         if (!course) {
             return res.status(404).json({ message: "Course not found" });

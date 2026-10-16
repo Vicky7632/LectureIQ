@@ -12,6 +12,7 @@ import {
 
 import { profileApi } from '../../api/profileApi'   // 👈 naya import
 import { setUser } from '../../store/slices/authSlice'
+import UserAvatar from '../../components/common/UserAvatar'
 
 // Zod validation schema for profile update
 const profileSchema = z.object({
@@ -191,11 +192,11 @@ const Profile = () => {
           {/* Profile Card */}
           <div className="card bg-base-100 shadow-lg border border-base-200">
             <div className="card-body items-center text-center">
-              <div className="avatar">
-                <div className="w-32 h-32 rounded-full bg-primary text-primary-content flex items-center justify-center text-4xl font-bold">
-                  {displayUser?.firstName?.charAt(0)}{displayUser?.lastName?.charAt(0)}
-                </div>
-              </div>
+              <UserAvatar
+                user={displayUser}
+                sizeClass="h-32 w-32"
+                textClass="text-4xl"
+              />
               <h2 className="text-2xl font-bold mt-4 text-base-content">
                 {displayUser?.firstName} {displayUser?.lastName}
               </h2>

@@ -58,4 +58,5 @@ test("persists Google-verified status in the Student schema field", async () => 
   assert.equal(createdUser.isEmailVerified, true);
   assert.equal(createdUser.isVerified, undefined);
   assert.ok(createdUser.emailVerifiedAt instanceof Date);
+  assert.equal(response.body.student.profileImage, "https://example.test/avatar.png");
 });
