@@ -1,3 +1,4 @@
+
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const Course = require("./models/course");
@@ -74,6 +75,17 @@ test("rejects students without active enrollment and unpublished courses", async
   await withAccessMocks(
     {
       course: { _id: courseId, status: "draft" },
+      enrollment: { _id: "enrollment-1" },
+    },
+    async () => {
+      const access = await canSubscribeToCourse(student(), courseId);
+      assert.equal(access.ok, false);
+      assert.equal(access.error, "Course access denied");
+    }
+  );
+  await withAccessMocks(
+    {
+      course: { _id: courseId, status: "rejected" },
       enrollment: { _id: "enrollment-1" },
     },
     async () => {

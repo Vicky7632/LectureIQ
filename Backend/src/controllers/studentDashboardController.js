@@ -5,17 +5,22 @@ const LectureProgress = require("../models/lectureProgress");
 
 const getMyCoursesDashboard = async (req, res) => {
   try {
-    const studentId = req.user._id;
+    const studentId = req.student._id;
 
     const enrollments = await Enrollment.find({
       student: studentId,
       status: "active",
-    }).populate("course");
+    }).populate({
+      path: "course",
+      match: { status: "published" },
+      select: "_id title thumbnail",
+    });
 
     const dashboard = [];
 
     for (let enr of enrollments) {
       const course = enr.course;
+      if (!course) continue;
 
       const totalLectures = await Lecture.countDocuments({
         course: course._id,
@@ -62,6 +67,7 @@ const getMyEnrollments = async (req, res) => {
 
     const enrollments = await Enrollment.find({ student: req.student._id }).populate({
       path: "course",
+      match: { status: "published" },
       select: "title thumbnail status teacher",
       populate: { path: "teacher", select: "firstName lastName" },
     });

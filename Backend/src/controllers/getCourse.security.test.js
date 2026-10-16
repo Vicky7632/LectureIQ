@@ -115,6 +115,30 @@ test("public course detail returns safe fields and an enrollment count, not stud
   assert.doesNotMatch(selectedFields, /enrolledStudents|approvedBy|rejectionReason/);
 });
 
+test("public course detail queries only published courses, including draft and rejected IDs", async () => {
+  const originalFindOne = Course.findOne;
+  const requested = [];
+  Course.findOne = (query) => {
+    requested.push(query);
+    return queryResult(null);
+  };
+
+  try {
+    for (const courseId of ["draft-course", "rejected-course"]) {
+      const response = createResponse();
+      await getCourseById({ params: { courseId } }, response);
+      assert.equal(response.statusCode, 404);
+      assert.deepEqual(response.body, { message: "Course not found" });
+    }
+    assert.deepEqual(requested, [
+      { _id: "draft-course", status: "published" },
+      { _id: "rejected-course", status: "published" },
+    ]);
+  } finally {
+    Course.findOne = originalFindOne;
+  }
+});
+
 test("paid course lectures expose previews to the public but not full lectures", async () => {
   const queries = [];
   Course.findOne = async () => makeCourse();
@@ -192,10 +216,13 @@ test("missing or unpublished courses return no lecture resources", async () => {
 
 test("public course listing uses a field allowlist and returns counts, not enrollment IDs", async () => {
   let selectedFields;
-  Course.find = () =>
-    queryResult([makeCourse()], (fields) => {
+  let query;
+  Course.find = (filter) => {
+    query = filter;
+    return queryResult([makeCourse()], (fields) => {
       selectedFields = fields;
     });
+  };
   Enrollment.aggregate = async () => [{ _id: "course-1", count: 4 }];
   const response = createResponse();
 
@@ -206,6 +233,7 @@ test("public course listing uses a field allowlist and returns counts, not enrol
   assert.equal(response.body.courses[0].enrolledStudents, undefined);
   assert.equal(response.body.courses[0].approvedBy, undefined);
   assert.doesNotMatch(selectedFields, /enrolledStudents|approvedBy|rejectionReason/);
+  assert.deepEqual(query, { status: "published" });
 });
 
 test("optional authentication does not treat inactive or unverified users as enrolled identities", async () => {

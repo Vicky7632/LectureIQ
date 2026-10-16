@@ -186,8 +186,19 @@ test("a fresh enrollment-status request returns the persisted active enrollment"
 test("returns only the authenticated student's enrollments and keeps all enrollment statuses", async () => {
   const originalFind = Enrollment.find;
   const ownEnrollments = [
-    createEnrollment({ status: "active" }),
-    createEnrollment({ _id: "pending-enrollment", status: "pending" }),
+    createEnrollment({
+      status: "active",
+      course: { _id: courseId, title: "Published course", status: "published" },
+    }),
+    createEnrollment({
+      _id: "pending-enrollment",
+      status: "pending",
+      course: {
+        _id: "unpublished-course",
+        title: "Private draft title",
+        status: "draft",
+      },
+    }),
     createEnrollment({ _id: "cancelled-enrollment", status: "cancelled" }),
     createEnrollment({ _id: "expired-enrollment", status: "expired" }),
   ];
@@ -207,7 +218,13 @@ test("returns only the authenticated student's enrollments and keeps all enrollm
         populateOptions = options;
         return allEnrollments.filter(
           (enrollment) => String(enrollment.student) === String(filter.student)
-        );
+        ).map((enrollment) => ({
+          ...enrollment,
+          course:
+            enrollment.course?.status === "published"
+              ? enrollment.course
+              : null,
+        }));
       },
     };
   };
@@ -226,8 +243,15 @@ test("returns only the authenticated student's enrollments and keeps all enrollm
       res.body.enrollments.map((enrollment) => enrollment.status),
       ["active", "pending", "cancelled", "expired"]
     );
+    assert.equal(res.body.enrollments[0].course.title, "Published course");
+    assert.equal(res.body.enrollments[1].course, null);
+    assert.equal(
+      JSON.stringify(res.body.enrollments).includes("Private draft title"),
+      false
+    );
     assert.deepEqual(populateOptions, {
       path: "course",
+      match: { status: "published" },
       select: "title thumbnail status teacher",
       populate: { path: "teacher", select: "firstName lastName" },
     });
