@@ -61,6 +61,7 @@
     min-width: 0;
     max-width: 100%;
     min-height: 2.65rem;
+    padding: 0.65rem 1rem;
     border-radius: 9px;
     font-weight: 600;
     text-transform: none;
@@ -90,13 +91,17 @@
 
   .btn-sm {
     min-height: 2.15rem;
-    padding-inline: 0.75rem;
+    padding: 0.4rem 0.75rem;
     font-size: 0.8125rem;
   }
 
   .btn-lg {
     min-height: 3.1rem;
-    padding-inline: 1.35rem;
+    padding: 0.85rem 1.35rem;
+  }
+
+  .btn-circle {
+    padding: 0;
   }
 
   .btn-outline {
